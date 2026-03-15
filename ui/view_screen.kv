@@ -1,0 +1,258 @@
+#:import dp kivy.metrics.dp
+#:import MatplotFigure kivy_matplotlib_widget.uix.graph_widget
+
+<ViewScreen>: # Kivy associe ce layout à la class ViewScreen dans Python
+    name: "view"
+
+    ScrollView:
+        id: view_scroll_layout
+        do_scroll_x: False
+
+        MDBoxLayout:
+            id: view_content
+            orientation: "vertical"
+            padding: dp(20)
+            spacing: dp(20)
+            size_hint: (1, None)
+            height: self.minimum_height
+			
+			# --- Contenu de la zone 1 (menu déroulant exercices + historique complet) ---
+            MDBoxLayout:
+                id: zone_1_view_content
+                orientation: "vertical"
+                #spacing: dp(10)
+                size_hint_y: None
+                height: self.minimum_height
+				
+				# --- Titre 1 ---
+                MDLabel:
+					id: title_1
+					text: "[b]Exercice[b]"
+					markup: True
+					halign: "left"
+					font_style: app.font_style_subtitle1
+					height: dp(10)
+					size_hint: (1, None)
+				
+				# ---- ESPACE ----
+				Widget:
+					size_hint_y: None
+					height: dp(20)
+				
+				# --- Contenu pour bouton exercice + icône Settings ---
+				MDBoxLayout:
+					id: exercice_content_2
+					orientation: "horizontal"
+					pos_hint: {"center_x": 0.5}
+					spacing: dp(15)
+					size_hint: (0.9, None)
+					height: dp(50)
+					
+					MDRectangleFlatIconButton:
+						id: exercise_menu_button	
+						text:"Ajoute un exercice"
+						text_color:"white"
+						font_size:app.font_size_button
+						icon:"menu-swap"
+						icon_color:"white"
+						line_color:"red"
+						line_width:1.5
+						pos_hint:{"center_x": 0.5, "center_y": 0.5}
+						size_hint:(1, None)
+						on_release: app.view.create_exercise_menu(sorted(app.profile.all_exercise_dict.keys()), self)
+
+					MDIconButton:
+                        id: setting_exercise_button
+                        icon: "square-edit-outline"
+                        icon_size: app.icon_size
+                        md_bg_color: (0.2, 0.6, 1, 1)
+                        theme_text_color: "Custom"
+                        text_color: "white"
+                        pos_hint: {"center_y": 0.5}
+                        size_hint: None, None
+                        on_release: app.view.create_exercise_settings(self)
+				
+				# --- Contenant de l'espace + Button accès à l'historique ---
+				MDBoxLayout:
+					id: history_content
+					orientation: "vertical"
+					size_hint: 0.9, None
+					pos_hint: {"center_x": 0.5}
+					height : 0
+					opacity: 0 # invisible
+					disabled: True
+					
+					# --- Bouton ---
+					MDFlatButton:
+						id: full_history_button
+						text: "voir l'historique complet"
+						theme_text_color: "Custom"
+						text_color: (0.2, 0.6, 1, 1)
+						font_size: app.font_size_button2
+						size_hint:(1, None)
+						halign: "right"
+						_no_ripple_effect: True
+						on_release: app.history.open_history(self)
+						
+
+			# --- Contenu de la zone 2 (Bilan volume de l'activité choisi) ---
+            MDBoxLayout:
+                id: zone_2_view_content
+                orientation: "vertical"
+				spacing: dp(10)
+				pos_hint: {"center_x": 0.5}
+				size_hint: 1, None
+				height: self.minimum_height
+				opacity:0
+				disabled: True
+				
+				# --- Titre 2 ---
+                MDLabel:
+					id: title_2
+					text: "[b]Volume[b]"
+					markup: True
+					halign: "left"
+					font_style: app.font_style_subtitle1
+					size_hint: (1, None)
+					height: dp(10)
+				
+				# --- Carousel Statistiques ---
+				MDCarousel:
+					id: stats_carousel
+					size_hint: (1, None)
+					height: dp(300)
+					loop: True
+					
+					# === CARD 1 : Graphique du volume sur 1 an ===
+					MDCard:
+						id: volume_graph_card
+						orientation: "vertical"
+						padding: dp(10)
+						size_hint: (0.9, 1)
+						pos_hint: {"center_x": 0.5}
+						
+
+						# Widget matplotlib (figure vide initialement)
+						MatplotFigure:
+							id: volume_graph_widget
+							size_hint: (1, 1)
+							
+					
+					# --- CARD 2 : Résumé des activités ---
+					MDCard:
+						id: activity_resume_card
+						orientation: "vertical"
+						padding: dp(10)
+						size_hint: (0.9, 1)
+						pos_hint: {"center_x": 0.5}
+
+						# ------------- Contenu titre + icône ------------
+						MDBoxLayout:
+							id: activity_resume_title_content
+							orientation: "horizontal"
+							size_hint: (1, 0.2)
+							spacing: dp(10)
+
+							MDIcon:
+								id: activity_resume_icon
+								icon: "weight-lifter"
+								theme_text_color: "Custom"
+								text_color: "yellow"
+								size_hint_x: None
+								pos_hint: {"center_y": 0.5}
+
+							MDLabel:
+								id: activity_resume_title
+								text: "Résumé des activités enregistrées"
+								font_style: app.font_style_subtitle2
+								size_hint_x: 0.8
+								theme_text_color: "Custom"
+								text_color: "white"
+						
+						# ----------- 30 derniers jours -----------
+						MDBoxLayout:
+							id: last_30_days_line
+							orientation: "horizontal"
+							spacing: dp(10)
+							padding: (dp(10), dp(0))
+							size_hint: (1, 0.2)
+
+							MDLabel:
+								text: "30 derniers jours"
+
+							MDLabel:
+								id: last_30_days_value
+								text: "0"
+
+						# ----------- Année actuelle -----------
+						MDBoxLayout:
+							id: last_year_line
+							orientation: "horizontal"
+							spacing: dp(10)
+							padding: (dp(10), dp(0))
+							size_hint: (1, 0.2)
+
+							MDLabel:
+								text: "Année actuelle"
+
+							MDLabel:
+								id: last_year_value
+								text: "0"
+
+						# ----------- Moy. mensuelle (1 an) -----------
+						MDBoxLayout:
+							id: freq_month_moy_line
+							orientation: "horizontal"
+							spacing: dp(10)
+							padding: (dp(10), dp(0))
+							size_hint: (1, 0.2)
+
+							MDLabel:
+								text: "Moy. Mensuelle (1 an)"
+
+							MDLabel:
+								id: freq_month_moy_value
+								text: "0"
+
+						# ----------- Total -----------
+						MDBoxLayout:
+							id: activity_total_line
+							orientation: "horizontal"
+							spacing: dp(10)
+							padding: (dp(10), dp(0))
+							size_hint: (1, 0.2)
+
+							MDLabel:
+								text: "Total"
+
+							MDLabel:
+								id: activity_total_value
+								text: "0"
+				
+				
+			# --- Contenu de la zone 3 (Performances) ---
+            MDBoxLayout:
+                id: zone_3_view_content
+                orientation: "vertical"
+				spacing: dp(10)
+				pos_hint: {"center_x": 0.5}
+				size_hint: (1, None)
+				height: 0
+				opacity: 0
+				disabled: True
+				
+				# --- Titre 3 ---
+                MDLabel:
+					id: title_3
+					text: "[b]Performances[b]"
+					markup: True
+					halign: "left"
+					font_style: app.font_style_subtitle1
+					size_hint: (1, None)
+					height: dp(10)
+				
+				# --- Graphique des performances ---
+				MatplotFigure:
+					id: perf_graph_widget
+					size_hint: (1, None)
+					height: dp(300)

@@ -1,0 +1,65 @@
+#:import MDTopAppBar kivymd.uix.toolbar
+#:include ui/login_dialog.kv
+#:include ui/view_screen.kv
+#:include ui/record_screen.kv
+#:include ui/history_screen.kv
+
+
+MDBoxLayout:
+    orientation: "vertical"
+
+    # ---------- TOP BAR ----------
+    MDTopAppBar:
+        id: top_bar
+        title: "Accueil"
+		md_bg_color:(0.12, 0.12, 0.12, 1)
+		left_action_items: [["account-circle", lambda x: app.profile.on_profile_icon_press(x)]]
+		right_action_items: [["cog", lambda x: app.on_settings_press(x)]]
+		
+    # ---------- SCREEN MANAGER ----------
+    ScreenManager:
+        id: screen_manager
+
+        Screen:
+            name: "home"
+            MDLabel:
+                text: "Écran d'accueil"
+                halign: "center"
+
+        RecordScreen: # Kivy instancie la class RecordScreen() ici (avec app=None)
+
+        ViewScreen: # Kivy instancie la class ViewScreen() ici (avec app=None)
+		
+		HistoryScreen:
+			
+			
+
+    # ---------- BOTTOM NAVIGATION (FIXE) ----------
+    MDBottomNavigation:
+		size_hint_y: None
+		height: dp(81)
+		
+        MDBottomNavigationItem:
+            name: "home_tab"
+            text: "Accueil"
+            icon: "home"
+            on_tab_press:
+                screen_manager.current = "home"
+                top_bar.title = "Accueil"
+
+        MDBottomNavigationItem:
+            name: "record_tab"
+            text: "Enregistrer"
+            icon: "plus-box"
+            on_tab_press:
+                screen_manager.current = "record"
+                top_bar.title = "Enregistrer"
+
+        MDBottomNavigationItem:
+            name: "view_tab"
+            text: "Visualiser"
+            icon: "chart-line"
+            on_tab_press:
+                screen_manager.current = "view"
+                top_bar.title = "Visualiser"
+

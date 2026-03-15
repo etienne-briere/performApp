@@ -1,0 +1,21 @@
+#:import dp kivy.metrics.dp
+
+<LoginDialogContent@MDBoxLayout>:
+    orientation: "vertical"
+    padding: [20, 20, 20, 20]
+    spacing: 20
+    size_hint_y: None
+    height: dp(160)
+
+    MDTextField:
+        id: username_field
+        hint_text: "Identifiant"
+        mode: "rectangle"
+        icon_left: "account"
+
+    MDTextField:
+        id: password_field
+        hint_text: "Mot de passe"
+        password: True
+        mode: "rectangle"
+        icon_left: "lock"

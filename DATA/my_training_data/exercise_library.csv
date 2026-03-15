@@ -1,0 +1,14 @@
+exercise_id,name,muscle_group,primary_group,secondary_group,type
+1,Pompe,Unknown,,,bodyweight
+2,Dips,Unknown,,,bodyweight
+3,Pompe_I,Unknown,,,bodyweight
+4,Dvlp_couché_barre,Unknown,,,bodyweight
+5,Traction_A,Unknown,,,bodyweight
+6,Traction_P,Unknown,,,bodyweight
+7,Roulette,Unknown,,,bodyweight
+8,Squat,Unknown,,,bodyweight
+9,PistolSquat,Unknown,,,bodyweight
+10,Bulgare,Unknown,,,bodyweight
+11,Ext_Mollets,Unknown,,,bodyweight
+12,Leg_curl,Unknown,,,bodyweight
+13,Split squat,Unknown,,,bodyweight

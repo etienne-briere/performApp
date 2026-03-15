@@ -1,0 +1,35 @@
+#:import dp kivy.metrics.dp
+#:import MatplotFigure kivy_matplotlib_widget.uix.graph_widget
+
+MDScreen:
+    name: "home"
+
+    ScrollView:
+        id: home_scroll_layout
+        do_scroll_x: False
+
+        MDBoxLayout:
+            id: home_content
+            orientation: "vertical"
+            padding: dp(20)
+            spacing: dp(20)
+            size_hint: (1, None)
+            height: self.minimum_height
+
+			# --- Contenu de la zone 1 (menu déroulant exercices + historique complet) ---
+            MDBoxLayout:
+                id: zone_1_home_content
+                orientation: "vertical"
+                #spacing: dp(10)
+                size_hint_y: None
+                height: self.minimum_height
+
+				# --- Titre 1 ---
+                MDLabel:
+					id: title_1
+					text: "[b]Exercice[b]"
+					markup: True
+					halign: "left"
+					#font_style: app.font_style_subtitle1
+					height: dp(10)
+					size_hint: (1, None)

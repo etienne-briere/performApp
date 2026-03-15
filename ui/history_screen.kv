@@ -1,0 +1,66 @@
+#:import dp kivy.metrics.dp
+#:import sp kivy.metrics.sp
+#:import Image kivy.core.image
+
+<HistoryScreen>:
+    name: "history"
+
+    MDBoxLayout:
+        id: main_layout
+        orientation: "vertical"
+
+        # --- TOP BAR ---
+        MDTopAppBar:
+            id: top_bar
+            title: ""
+            elevation: 5
+            left_action_items: [["arrow-left", lambda x: root.go_back()]]
+            pos_hint: {"top": 1}
+
+        # --- CONTENU (tableau + delete bouton)---
+        MDBoxLayout:
+            id: history_content
+            orientation: "vertical"
+            pos_hint: {"center_x": 0.5}
+            spacing: dp(10)
+            padding: dp(20)#[dp(20), dp(20), dp(20), dp(100)] # left, top, right, bottom
+			
+			# --- Contenu superposable (chargement + tableau)
+			MDFloatLayout:
+				
+				# Container du tableau
+				MDBoxLayout:
+					id: table_container
+					orientation: "vertical"
+					size_hint: 1, 1
+					pos_hint: {"center_x": 0.5, "center_y": 0.5}
+			
+				# --- GIF animé comme loader ---
+				FolderAnimation:
+					id: loader_gif
+					image_folder: "assets/loader_frames"
+					interval: 0.05
+					loop: True
+					allow_stretch: True
+					keep_ratio: True
+					size_hint: None, None
+					size: dp(60), dp(60)
+					pos_hint: {"center_x": 0.5, "center_y": 0.5}
+					opacity: 1
+				
+
+			# Bouton supprimer
+			MDRectangleFlatIconButton:
+				id: delete_button
+				text: "Supprimer la sélection"
+				text_color: "white"
+				font_size: app.font_size_button
+				icon: "delete"
+				icon_color: "red"
+				line_color:"red"
+				line_width:1.5
+				pos_hint: {"center_x": 0.5}
+				#md_bg_color: (0.2, 0.6, 1, 1)
+				size_hint: (None, None)
+				height: dp(50)
+				on_release: root.delete_checked_rows()

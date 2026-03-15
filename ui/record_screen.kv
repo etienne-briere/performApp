@@ -1,0 +1,487 @@
+#:import dp kivy.metrics.dp
+#:import MatplotFigure kivy_matplotlib_widget.uix.graph_widget
+
+<RecordScreen>: # Kivy associe ce layout à la class RecordScreen dans Python
+    name: "record"
+
+    ScrollView:
+        id: record_scroll_layout
+        do_scroll_x: False
+
+        MDBoxLayout:
+            id: record_content
+            orientation: "vertical"
+            padding: dp(20)
+            spacing: dp(20)
+            size_hint: (1, None)
+            height: self.minimum_height
+			
+			# --- Contenu de la zone 1 (Date + menu déroulant exercices + historique complet) ---
+            MDBoxLayout:
+                id: zone_1_record_content
+                orientation: "vertical"
+                #spacing: dp(10)
+                size_hint_y: None
+                height: self.minimum_height
+				
+				# --- Titre 1 : Date ---
+                MDLabel:
+					id: title_1
+					text: "[b]Date de la séance[b]"
+					markup: True
+					halign: "left"
+					font_style: app.font_style_subtitle1
+					height: dp(10)
+					size_hint: (1, None)
+				
+				# ---- ESPACE ----
+				Widget:
+					size_hint_y: None
+					height: dp(20)
+				
+				# --- Bouton choix de la date ---
+				MDRectangleFlatIconButton:
+					id: date_button
+					text: app.today_str
+					text_color: "white"
+					icon: "calendar"  # le nom de l'icône (Material Design Icons)
+					icon_color: "white"
+					line_color: "white"
+					line_width: 1.5
+					font_size: app.font_size_button
+					size_hint: (0.5, 0.5)
+					pos_hint: {"center_x": 0.5}
+					rounded_button: True
+					on_release: app.record.show_date_picker(self)
+		
+			# --- Contenu de la zone 2 (Menu déroulant exercices + historique complet + rappel last séance) ---
+            MDBoxLayout:
+                id: zone_2_record_content
+                orientation: "vertical"
+                spacing: dp(20)
+                size_hint_y: None
+                height: self.minimum_height
+				
+				# --- Titre 1 ---
+                MDLabel:
+					id: title_1
+					text: "[b]Exercice[b]"
+					markup: True
+					halign: "left"
+					font_style: app.font_style_subtitle1
+					height: dp(10)
+					size_hint: (1, None)
+				
+				# --- Contenu pour bouton exercice + icône Settings ---
+				MDBoxLayout:
+					id: exercice_content
+					orientation: "horizontal"
+					pos_hint: {"center_x": 0.5}
+					spacing: dp(15)
+					size_hint: (0.9, None)
+					height: dp(50)
+					
+					MDRectangleFlatIconButton:
+						id: exercise_menu_button
+						text:"Ajoute un exercice"
+						text_color:"white"
+						font_size:app.font_size_button
+						icon:"menu-swap"
+						icon_color:"white"
+						line_color:"red"
+						line_width:1.5
+						pos_hint:{"center_x": 0.5, "center_y": 0.5}
+						size_hint:(1, None)
+						on_release: app.view.create_exercise_menu(sorted(app.profile.all_exercise_dict.keys()), self)
+
+					MDIconButton:
+                        id: setting_exercise_button
+                        icon: "square-edit-outline"
+                        icon_size: app.icon_size
+                        md_bg_color: (0.2, 0.6, 1, 1)
+                        theme_text_color: "Custom"
+                        text_color: "white"
+                        pos_hint: {"center_y": 0.5}
+                        size_hint: None, None
+                        on_release: app.view.create_exercise_settings(self)
+				
+				# --- Contenant de l'encadré de la dernière perf + Button accès à l'historique ---
+				MDBoxLayout:
+					id: history_content
+					orientation: "vertical"
+					size_hint: 0.9, None
+					pos_hint: {"center_x": 0.5}
+					height : 0
+					opacity: 0 # invisible
+					disabled: True # désactive les clics
+					
+					# --- Encadré du rappel de la dernière perf ---
+					MDCard:
+						id: last_perf_recall_card
+						orientation: "vertical"
+						padding: dp(10)
+						spacing: dp(10)
+						size_hint: 1, None
+						pos_hint: {"center_x": 0.5}
+						
+						MDLabel:
+							id: last_perf_recall_title
+							text: "Dernière séance"
+							theme_text_color: "Custom"
+							text_color: "gray"
+							font_style: app.font_style_subtitle2
+							size_hint: 1, None
+							height: dp(30)
+						
+						MDBoxLayout:
+							id: last_perf_recall_line
+							orientation: "horizontal"
+							padding: dp(10)
+							height: dp(30)
+							size_hint: 1, None
+							
+							# --- Contenu pour rappel Date ---
+							MDBoxLayout:
+								id: row_date
+								orientation: "horizontal"
+								pos_hint: {"center_y": 0.5}
+								spacing: dp(15)
+								size_hint: 0.3, None
+								
+								MDIcon:
+									id: date_icon
+									icon: "calendar"
+									font_size: "20sp"
+									size_hint: 1, None
+								
+								MDLabel:
+									id: date_label
+									text: "No Data"
+									halign: "left"
+									text_color: "gray"
+									font_style: app.font_style_subtitle2
+							
+							# --- Contenu pour rappel Kg soulevé ---
+							MDBoxLayout:
+								id: row_kg
+								orientation: "horizontal"
+								pos_hint: {"center_y": 0.5}
+								spacing: dp(15)
+								size_hint: 0.2, None
+								
+								MDIcon:
+									id: kg_icon
+									icon: "weight-kilogram"
+									theme_text_color: "Custom"
+									text_color: "skyblue"
+									font_size: "20sp"
+									size_hint: 1, None
+									#width: dp(24)
+								
+								MDLabel:
+									id: kg_label
+									text: "No Data"
+									halign: "left"
+									text_color: "gray"
+									font_style: app.font_style_subtitle2
+							
+							# --- Contenu pour rappel répétitions/série ---
+							MDBoxLayout:
+								id: row_reps
+								orientation: "horizontal"
+								pos_hint: {"center_y": 0.5}
+								spacing: dp(15)
+								size_hint: 0.4, None
+								
+								MDIcon:
+									id: reps_icon
+									icon: "layers"
+									theme_text_color: "Custom"
+									text_color: (1, 0.65, 0.2, 1)
+									font_size: "20sp"
+									size_hint: 1, None
+									#width: dp(24)
+								
+								MDLabel:
+									id: reps_label
+									text: "No Data"
+									halign: "left"
+									text_color: "gray"
+									font_style: app.font_style_subtitle2
+							
+							# --- Contenu pour rappel Icon Etat de forme + Icon info charge à suivre ---
+							MDBoxLayout:
+								id: row_icons
+								orientation: "horizontal"
+								pos_hint: {"center_y": 0.5}
+								spacing: dp(60)
+								size_hint: 0.2, None
+								
+								MDIcon:
+									id: etat_icon
+									icon: "emoticon-neutral-outline"
+									theme_text_color: "Custom"
+									text_color: "gray"
+									font_size: "25sp"
+									pos_hint: {"center_y": 0.5}
+									size_hint: 0.5, None
+								
+								MDIcon:
+									id: inform_icon
+									icon: "swap-horizontal"
+									theme_text_color: "Custom"
+									text_color: "yellow"
+									font_size: "25sp"
+									pos_hint: {"center_y": 0.5}
+									size_hint: 0.5, None
+					
+					
+					# --- Bouton ---
+					MDFlatButton:
+						id: full_history_button
+						text: "voir l'historique complet"
+						theme_text_color: "Custom"
+						text_color: (0.2, 0.6, 1, 1)
+						font_size: app.font_size_button2
+						size_hint:(1, None)
+						halign: "right"
+						_no_ripple_effect: True
+						on_release: app.history.open_history(self)
+
+			
+			
+			# --- Contenu de la zone 3 (Entrée de l'activité réalisée) ---
+            MDBoxLayout:
+                id: zone_3_record_content
+                orientation: "vertical"
+                spacing: dp(20)
+                size_hint_y: None
+                height: self.minimum_height
+				
+				# --- Titre 1 ---
+                MDLabel:
+					id: title_1
+					text: "[b]Performances[b]"
+					markup: True
+					halign: "left"
+					font_style: app.font_style_subtitle1
+					height: dp(10)
+					size_hint: 1, None
+				
+				# --- Zone entrée Poids ---
+				MDTextField:
+					id: weight_input
+					hint_text: "Poids (kg)" 
+					helper_text: "Entre le poids soulevé" # texte d'aide
+					icon_left: "weight-kilogram"
+					helper_text_mode: "on_focus"
+					mode: "rectangle" # style du champ ("rectangle", "fill", "round")
+					size_hint: 0.9, None
+					pos_hint: {"center_x": 0.5}
+					input_filter: "float" # float seulement
+					text_color_focus: "white"
+					hint_text_color_focus: "skyblue"
+					line_color_focus: "skyblue"
+					icon_left_color_focus: "skyblue"
+					helper_text_color_focus: "skyblue"
+				
+				# --- Contenu du boutton supprimer + ajouter une série ---
+				MDBoxLayout:
+					id: buttons_serie_content
+					orientation: "horizontal"
+					spacing: dp(10)
+					pos_hint: {"center_x": 0.5}
+					size_hint: 0.9, None
+					height: self.minimum_height
+					
+					# --- Encadré du bouton PLUS ---
+					MDCard:
+						id: add_serie_card
+						orientation: "horizontal"
+						size_hint: 1, None
+						height: dp(50)
+						radius: [dp(12)]
+						ripple_behavior: True # effet d'onde au clic
+						on_release: app.record.add_serie_input(self)
+						
+						# --- Contenu texte + icon ---
+						MDBoxLayout:
+							orientation: "horizontal"
+							padding: dp(10)
+							
+							
+							MDLabel:
+								text: "Ajouter une série"
+								halign: "center"
+								font_size: app.font_size_button2
+								#font_style: app.font_style_subtitle2
+								
+							
+							MDIcon:
+								icon: "plus-circle-outline"
+								font_size: app.icon_size
+								theme_text_color: "Custom"
+								text_color: 0.2, 0.6, 1, 1  # bleu doux
+								size_hint: None, None
+								pos_hint: {"center_y": 0.5}
+					
+					# --- Encadré du bouton MOINS ---
+					MDCard:
+						id: remove_serie_card
+						orientation: "horizontal"
+						size_hint: 1, None
+						height: dp(50)
+						radius: [dp(12)]
+						ripple_behavior: True # effet d'onde au clic
+						on_release: app.record.remove_serie_input(self)
+						
+						# --- Contenu texte + icon ---
+						MDBoxLayout:
+							orientation: "horizontal"
+							padding: dp(10)
+							
+							MDLabel:
+								text: "Retirer une série"
+								halign: "center"
+								font_size: app.font_size_button2
+							
+							MDIcon:
+								icon: "minus-circle-outline"
+								font_size: app.icon_size
+								theme_text_color: "Custom"
+								text_color: 0.2, 0.6, 1, 1  # bleu doux
+								size_hint: None, None
+								pos_hint: {"center_y": 0.5}
+							
+			# --- Contenu de la zone 4 (Entrée de l'état de forme) ---
+            MDBoxLayout:
+                id: zone_4_record_content
+                orientation: "vertical"
+                spacing: dp(10)
+                size_hint_y: None
+                height: self.minimum_height
+				
+				# --- Titre 1 ---
+                MDLabel:
+					id: title_1
+					text: "[b]Etat de forme[b]"
+					markup: True
+					halign: "left"
+					font_style: app.font_style_subtitle1
+					height: dp(10)
+					size_hint: 1, None
+				
+				# --- Contenu des smileys---
+				MDBoxLayout:
+					id: smiley_layout
+					orientation: "horizontal"
+					spacing: dp(25)
+					pos_hint: {"center_x": 0.5} # centre dans le parent
+					size_hint: 0.8, None
+					height: self.minimum_height
+			
+			# --- Contenu de la zone 5 (Notes) ---
+            MDBoxLayout:
+                id: zone_5_record_content
+                orientation: "vertical"
+                spacing: dp(20)
+                size_hint_y: None
+                height: self.minimum_height
+				
+				# --- Titre 1 ---
+                MDLabel:
+					id: title_1
+					text: "[b]Notes[b]"
+					markup: True
+					halign: "left"
+					font_style: app.font_style_subtitle1
+					height: dp(10)
+					size_hint: 1, None
+				
+				# --- Zone entrée ---
+				MDTextField:
+					id: notes_input
+					hint_text: "Note tes douleurs ou sensations (optionnel)" 
+					helper_text: "Exemple : douleur au genou, fatigue inhabituelle..." # texte d'aide
+					icon_left: "note-edit-outline"
+					helper_text_mode: "on_focus"
+					mode: "fill" # style du champ ("rectangle", "fill", "round")
+					size_hint: 0.9, None
+					pos_hint: {"center_x": 0.5}
+					text_color_focus: "white"
+			
+			# --- Contenu de la zone 6 (Enregistrement) ---
+            MDBoxLayout:
+                id: zone_6_record_content
+                orientation: "vertical"
+                spacing: dp(20)
+				padding: dp(50)
+                size_hint_y: None
+                height: self.minimum_height
+				
+				MDRectangleFlatIconButton:
+					id: save_button
+					text: "Enregistrer"
+					text_color: "white"
+					font_size: app.font_size_button
+					icon: "content-save"
+					icon_color: "white"
+					size_hint: 1, None
+					md_bg_color: 0.2, 0.6, 1, 1
+					on_release: app.record.save_activity()
+				
+				MDRectangleFlatIconButton:
+					id: download_button
+					text: "Exporter (.xlsx)"
+					text_color: "white"
+					font_size: app.font_size_button
+					icon: "download"
+					icon_color: "white"
+					size_hint: 1, None
+					md_bg_color: 0.2, 0.6, 1, 1
+					on_release: app.record.open_file_manager_export()
+	
+	# --- GIF animé comme loader ---
+	FolderAnimation:
+		id: loader_gif
+		image_folder: "assets/loader_frames"
+		interval: 0.05
+		loop: True
+		allow_stretch: False
+		keep_ratio: True
+		size_hint: None, None
+		size: dp(60), dp(60)
+		pos_hint: {"center_x": 0.5, "center_y": 0.5}
+		opacity: 0
+	
+	# --- GIF animé comme success ---
+	FolderAnimation:
+		id: success_gif
+		image_folder: "assets/check"
+		interval: 0.1
+		loop: False
+		allow_stretch: False
+		keep_ratio: True
+		size_hint: None, None
+		size: dp(60), dp(60)
+		pos_hint: {"center_x": 0.5, "center_y": 0.5}
+		opacity: 0
+				
+				
+				
+				
+							
+					
+				
+					
+				
+				
+							
+						
+						
+						
+						
+						
+					
+					
+            
