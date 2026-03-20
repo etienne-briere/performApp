@@ -1,18 +1,27 @@
 import asyncio
 from kivy.clock import Clock
 from kivy.metrics import dp
+from kivy.properties import BooleanProperty, NumericProperty, StringProperty, ObjectProperty
+
 from kivymd.uix.datatables import MDDataTable
 from kivymd.uix.screen import MDScreen
 
 from kivymd.toast import toast
 
-from config import ROW_HISTORY_COUNT
-
+from config import ROW_HISTORY_COUNT, FONT_SIZE_BUTTON, FONT_SIZE_BUTTON2, FONT_STYLE_SUBTITLE1, FONT_STYLE_SUBTITLE2, ICON_SIZE
 
 import threading
 
 
 class HistoryScreen(MDScreen):
+
+    # Properties pour l'UI
+    font_size_button = NumericProperty(FONT_SIZE_BUTTON) # taille du texte des boutons
+    font_size_button2 = NumericProperty(FONT_SIZE_BUTTON2) # taille du texte des boutons secondaires
+    font_style_subtitle1 = StringProperty(FONT_STYLE_SUBTITLE1) # style du texte des sous-titres
+    font_style_subtitle2 = StringProperty(FONT_STYLE_SUBTITLE2) # style du texte des titres des encadrés
+    icon_size = NumericProperty(ICON_SIZE) # taille des icônes
+
     def __init__(self, app=None, **kwargs):
         super().__init__(**kwargs)
 

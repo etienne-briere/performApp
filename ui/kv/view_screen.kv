@@ -30,7 +30,7 @@
 					text: "[b]Exercice[b]"
 					markup: True
 					halign: "left"
-					font_style: app.font_style_subtitle1
+					font_style: root.font_style_subtitle1
 					height: dp(10)
 					size_hint: (1, None)
 				
@@ -52,7 +52,7 @@
 						id: exercise_menu_button	
 						text:"Ajoute un exercice"
 						text_color:"white"
-						font_size:app.font_size_button
+						font_size:root.font_size_button
 						icon:"menu-swap"
 						icon_color:"white"
 						line_color:"red"
@@ -64,7 +64,7 @@
 					MDIconButton:
                         id: setting_exercise_button
                         icon: "square-edit-outline"
-                        icon_size: app.icon_size
+                        icon_size: root.icon_size
                         md_bg_color: (0.2, 0.6, 1, 1)
                         theme_text_color: "Custom"
                         text_color: "white"
@@ -88,7 +88,7 @@
 						text: "voir l'historique complet"
 						theme_text_color: "Custom"
 						text_color: (0.2, 0.6, 1, 1)
-						font_size: app.font_size_button2
+						font_size: root.font_size_button2
 						size_hint:(1, None)
 						halign: "right"
 						_no_ripple_effect: True
@@ -112,7 +112,7 @@
 					text: "[b]Volume[b]"
 					markup: True
 					halign: "left"
-					font_style: app.font_style_subtitle1
+					font_style: root.font_style_subtitle1
 					size_hint: (1, None)
 					height: dp(10)
 				
@@ -164,7 +164,7 @@
 							MDLabel:
 								id: activity_resume_title
 								text: "Résumé des activités enregistrées"
-								font_style: app.font_style_subtitle2
+								font_style: root.font_style_subtitle2
 								size_hint_x: 0.8
 								theme_text_color: "Custom"
 								text_color: "white"
@@ -247,7 +247,7 @@
 					text: "[b]Performances[b]"
 					markup: True
 					halign: "left"
-					font_style: app.font_style_subtitle1
+					font_style: root.font_style_subtitle1
 					size_hint: (1, None)
 					height: dp(10)
 				

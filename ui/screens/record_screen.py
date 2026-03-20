@@ -13,6 +13,8 @@ from kivymd.uix.textfield import MDTextField
 from kivymd.toast import toast
 from kivy.clock import Clock
 from kivy.utils import platform
+from kivy.properties import BooleanProperty, NumericProperty, StringProperty, ObjectProperty
+
 if platform == "android":
     from jnius import autoclass, cast
     from android import activity
@@ -21,12 +23,18 @@ from plyer import filechooser
 import os
 import threading
 from openpyxl import Workbook
-from config import SERIE_COUNT
-
-
-# from app.core.data_parser import save_performance
+from config import SERIE_COUNT, SMILEY_DATA, SMILEY_ICON_SIZE, FONT_SIZE_BUTTON, FONT_SIZE_BUTTON2, FONT_STYLE_SUBTITLE1, FONT_STYLE_SUBTITLE2, ICON_SIZE
 
 class RecordScreen(MDScreen):
+
+    # Properties pour l'UI
+    date_activity = ObjectProperty(datetime.today()) # date de la séance
+    date_activity_str = ObjectProperty(datetime.today().strftime("%d/%m/%Y")) # date de la séance
+    font_size_button = NumericProperty(FONT_SIZE_BUTTON) # taille du texte des boutons
+    font_size_button2 = NumericProperty(FONT_SIZE_BUTTON2) # taille du texte des boutons secondaires
+    font_style_subtitle1 = StringProperty(FONT_STYLE_SUBTITLE1) # style du texte des sous-titres
+    font_style_subtitle2 = StringProperty(FONT_STYLE_SUBTITLE2) # style du texte des titres des encadrés
+    icon_size = NumericProperty(ICON_SIZE) # taille des icônes
 
     def __init__(self, app=None, **kwargs):
         super().__init__(**kwargs) # ²super() appelle _init_ de la class parent
@@ -39,7 +47,16 @@ class RecordScreen(MDScreen):
         self.smiley_buttons = []
         self.all_exercise_dfs = dict()
         self.series_inputs = [] # stockage des champs des séries
-        self.date_activity = datetime.today()
+        
+        # Données smileys
+        self.smiley_data = [
+            ("emoticon-dead-outline", (1, 0, 0, 1)),  # Rouge
+            ("emoticon-sad-outline", (1, 0.4, 0, 1)),  # Orange foncé
+            ("emoticon-neutral-outline", (1, 0.7, 0, 1)),  # Jaune/orangé
+            ("emoticon-happy-outline", (0.4, 0.8, 0, 1)),  # Vert clair
+            ("emoticon-excited-outline", (0, 0.7, 0.2, 1)),  # Vert foncé
+            ("close-outline", "gray")  # Etat inconnu
+        ]
 
 
     def on_kv_post(self, base_widget):
@@ -61,13 +78,13 @@ class RecordScreen(MDScreen):
             return
 
         # Créer les boutons de smiley dans l'UI
-        for idx, (icon_name, color) in enumerate(self.app.smiley_data[:-1]): # retirer le dernier élement de la liste
+        for idx, (icon_name, color) in enumerate(SMILEY_DATA[:-1]): # retirer le dernier élement de la liste
             btn = MDIconButton(
                 icon=icon_name,
                 theme_icon_color="Custom",
                 text_color=color,
                 size_hint=(0.2, None),
-                icon_size=self.app.smiley_icon_size,
+                icon_size=SMILEY_ICON_SIZE,
                 on_release=lambda inst, i=idx: self.on_smiley_select(i)
             )
             # Ajout à la liste
@@ -236,23 +253,23 @@ class RecordScreen(MDScreen):
         Met en évidence le smiley sélectionné en le gardant coloré et en grisant les autres.
         :param index: index du smiley cliqué dans la liste smiley_data
         """
-        for i, (btn, (_, color)) in enumerate(zip(self.smiley_buttons, self.app.smiley_data)):
+        for i, (btn, (_, color)) in enumerate(zip(self.smiley_buttons, SMILEY_DATA)):
             if i == index:
                 btn.text_color = color  # garde la couleur
             else:
                 btn.text_color = (0.6, 0.6, 0.6, 1)  # gray
 
-        self.selected_smiley = self.app.smiley_data[index][0]
+        self.selected_smiley = SMILEY_DATA[index][0]
 
     def reset_smiley_btn(self):
         """
         Réinitialiser la zone d'état de forme.
         """
-        for i, (btn, (_, color)) in enumerate(zip(self.smiley_buttons, self.app.smiley_data)):
+        for i, (btn, (_, color)) in enumerate(zip(self.smiley_buttons, SMILEY_DATA)):
             btn.text_color = color
 
     def get_smiley_color(self, icon_name):
-        for name, color in self.app.smiley_data:
+        for name, color in SMILEY_DATA:
             if name == icon_name:
                 return color
         # return None  # si non trouvé

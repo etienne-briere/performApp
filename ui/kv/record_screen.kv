@@ -30,7 +30,7 @@
 					text: "[b]Date de la séance[b]"
 					markup: True
 					halign: "left"
-					font_style: app.font_style_subtitle1
+					font_style: root.font_style_subtitle1
 					height: dp(10)
 					size_hint: (1, None)
 				
@@ -42,17 +42,17 @@
 				# --- Bouton choix de la date ---
 				MDRectangleFlatIconButton:
 					id: date_button
-					text: app.today_str
+					text: root.date_activity_str
 					text_color: "white"
 					icon: "calendar"  # le nom de l'icône (Material Design Icons)
 					icon_color: "white"
 					line_color: "white"
 					line_width: 1.5
-					font_size: app.font_size_button
+					font_size: root.font_size_button
 					size_hint: (0.5, 0.5)
 					pos_hint: {"center_x": 0.5}
 					rounded_button: True
-					on_release: app.record.show_date_picker(self)
+					on_release: root.show_date_picker(self)
 		
 			# --- Contenu de la zone 2 (Menu déroulant exercices + historique complet + rappel last séance) ---
             MDBoxLayout:
@@ -68,7 +68,7 @@
 					text: "[b]Exercice[b]"
 					markup: True
 					halign: "left"
-					font_style: app.font_style_subtitle1
+					font_style: root.font_style_subtitle1
 					height: dp(10)
 					size_hint: (1, None)
 				
@@ -85,7 +85,7 @@
 						id: exercise_menu_button
 						text:"Ajoute un exercice"
 						text_color:"white"
-						font_size:app.font_size_button
+						font_size:root.font_size_button
 						icon:"menu-swap"
 						icon_color:"white"
 						line_color:"red"
@@ -97,7 +97,7 @@
 					MDIconButton:
                         id: setting_exercise_button
                         icon: "square-edit-outline"
-                        icon_size: app.icon_size
+                        icon_size: root.icon_size
                         md_bg_color: (0.2, 0.6, 1, 1)
                         theme_text_color: "Custom"
                         text_color: "white"
@@ -129,7 +129,7 @@
 							text: "Dernière séance"
 							theme_text_color: "Custom"
 							text_color: "gray"
-							font_style: app.font_style_subtitle2
+							font_style: root.font_style_subtitle2
 							size_hint: 1, None
 							height: dp(30)
 						
@@ -159,7 +159,7 @@
 									text: "No Data"
 									halign: "left"
 									text_color: "gray"
-									font_style: app.font_style_subtitle2
+									font_style: root.font_style_subtitle2
 							
 							# --- Contenu pour rappel Kg soulevé ---
 							MDBoxLayout:
@@ -183,7 +183,7 @@
 									text: "No Data"
 									halign: "left"
 									text_color: "gray"
-									font_style: app.font_style_subtitle2
+									font_style: root.font_style_subtitle2
 							
 							# --- Contenu pour rappel répétitions/série ---
 							MDBoxLayout:
@@ -207,7 +207,7 @@
 									text: "No Data"
 									halign: "left"
 									text_color: "gray"
-									font_style: app.font_style_subtitle2
+									font_style: root.font_style_subtitle2
 							
 							# --- Contenu pour rappel Icon Etat de forme + Icon info charge à suivre ---
 							MDBoxLayout:
@@ -242,7 +242,7 @@
 						text: "voir l'historique complet"
 						theme_text_color: "Custom"
 						text_color: (0.2, 0.6, 1, 1)
-						font_size: app.font_size_button2
+						font_size: root.font_size_button2
 						size_hint:(1, None)
 						halign: "right"
 						_no_ripple_effect: True
@@ -264,7 +264,7 @@
 					text: "[b]Performances[b]"
 					markup: True
 					halign: "left"
-					font_style: app.font_style_subtitle1
+					font_style: root.font_style_subtitle1
 					height: dp(10)
 					size_hint: 1, None
 				
@@ -302,7 +302,7 @@
 						height: dp(50)
 						radius: [dp(12)]
 						ripple_behavior: True # effet d'onde au clic
-						on_release: app.record.add_serie_input(self)
+						on_release: root.add_serie_input(self)
 						
 						# --- Contenu texte + icon ---
 						MDBoxLayout:
@@ -313,13 +313,13 @@
 							MDLabel:
 								text: "Ajouter une série"
 								halign: "center"
-								font_size: app.font_size_button2
-								#font_style: app.font_style_subtitle2
+								font_size: root.font_size_button2
+								#font_style: root.font_style_subtitle2
 								
 							
 							MDIcon:
 								icon: "plus-circle-outline"
-								font_size: app.icon_size
+								font_size: root.icon_size
 								theme_text_color: "Custom"
 								text_color: 0.2, 0.6, 1, 1  # bleu doux
 								size_hint: None, None
@@ -333,7 +333,7 @@
 						height: dp(50)
 						radius: [dp(12)]
 						ripple_behavior: True # effet d'onde au clic
-						on_release: app.record.remove_serie_input(self)
+						on_release: root.remove_serie_input(self)
 						
 						# --- Contenu texte + icon ---
 						MDBoxLayout:
@@ -343,11 +343,11 @@
 							MDLabel:
 								text: "Retirer une série"
 								halign: "center"
-								font_size: app.font_size_button2
+								font_size: root.font_size_button2
 							
 							MDIcon:
 								icon: "minus-circle-outline"
-								font_size: app.icon_size
+								font_size: root.icon_size
 								theme_text_color: "Custom"
 								text_color: 0.2, 0.6, 1, 1  # bleu doux
 								size_hint: None, None
@@ -367,7 +367,7 @@
 					text: "[b]Etat de forme[b]"
 					markup: True
 					halign: "left"
-					font_style: app.font_style_subtitle1
+					font_style: root.font_style_subtitle1
 					height: dp(10)
 					size_hint: 1, None
 				
@@ -394,7 +394,7 @@
 					text: "[b]Notes[b]"
 					markup: True
 					halign: "left"
-					font_style: app.font_style_subtitle1
+					font_style: root.font_style_subtitle1
 					height: dp(10)
 					size_hint: 1, None
 				
@@ -423,23 +423,23 @@
 					id: save_button
 					text: "Enregistrer"
 					text_color: "white"
-					font_size: app.font_size_button
+					font_size: root.font_size_button
 					icon: "content-save"
 					icon_color: "white"
 					size_hint: 1, None
 					md_bg_color: 0.2, 0.6, 1, 1
-					on_release: app.record.save_activity()
+					on_release: root.save_activity()
 				
 				MDRectangleFlatIconButton:
 					id: download_button
 					text: "Exporter (.xlsx)"
 					text_color: "white"
-					font_size: app.font_size_button
+					font_size: root.font_size_button
 					icon: "download"
 					icon_color: "white"
 					size_hint: 1, None
 					md_bg_color: 0.2, 0.6, 1, 1
-					on_release: app.record.open_file_manager_export()
+					on_release: root.open_file_manager_export()
 	
 	# --- GIF animé comme loader ---
 	FolderAnimation:

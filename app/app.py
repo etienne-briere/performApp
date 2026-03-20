@@ -50,22 +50,6 @@ class PerformApp(MDApp):
         self.theme_cls.primary_palette = PRIMARY_PALETTE
         self.theme_cls.accent_palette = ACCENT_PALETTE
 
-        # Adaptation écran
-        if Window.width < dp(500):  # pour smartphone
-            self.font_size_button = sp(15)  # taille texte boutons
-            self.font_size_button2 = sp(10)
-            self.font_style_subtitle1 = "Subtitle1"  # style du texte des sous-titres
-            self.font_style_subtitle2 = "Caption"  # style du texte des titres des encadrés
-            self.icon_size = sp(20)
-            self.smiley_icon_size = sp(40)
-        else:
-            self.font_size_button = sp(20)
-            self.font_size_button2 = sp(15)
-            self.font_style_subtitle1 = "H6"
-            self.font_style_subtitle2 = "Body2"
-            self.icon_size = sp(25)
-            self.smiley_icon_size = sp(60)
-
         # Charger les fichiers .kv
         Builder.load_file("ui/kv/view_screen.kv")
         Builder.load_file("ui/kv/history_screen.kv")
@@ -75,21 +59,7 @@ class PerformApp(MDApp):
         Builder.load_file("ui/kv/home_screen.kv")
         Builder.load_file("ui/kv/main.kv")
 
-        # Données smileys
-        self.smiley_data = [
-            ("emoticon-dead-outline", (1, 0, 0, 1)),  # Rouge
-            ("emoticon-sad-outline", (1, 0.4, 0, 1)),  # Orange foncé
-            ("emoticon-neutral-outline", (1, 0.7, 0, 1)),  # Jaune/orangé
-            ("emoticon-happy-outline", (0.4, 0.8, 0, 1)),  # Vert clair
-            ("emoticon-excited-outline", (0, 0.7, 0.2, 1)),  # Vert foncé
-            ("close-outline", "gray")  # Etat inconnu
-        ]
-
-        # Date du jour
-        self.today = datetime.today()
-        self.today_str = datetime.today().strftime("%d/%m/%Y")
-
-        return Builder.load_file("ui/main.kv")
+        return Builder.load_file("ui/kv/main.kv")
 
     def on_start(self):
         '''
@@ -99,14 +69,6 @@ class PerformApp(MDApp):
 
         # ScreenManager
         self.sm = self.root.ids.screen_manager
-
-        # # Vraies instances créées par le chargement des fichiers .kv
-        # self.view = self.root.ids.screen_manager.get_screen("view")
-        # self.view.app = self
-        # self.record = self.root.ids.screen_manager.get_screen("record")
-        # self.record.app = self
-        # self.history = self.root.ids.screen_manager.get_screen("history")
-        # self.history.app = self
 
     def on_stop(self):
         """

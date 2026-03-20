@@ -12,6 +12,8 @@ from kivymd.uix.textfield import MDTextField
 from kivymd.uix.button import MDRaisedButton, MDFlatButton, MDIconButton, MDRectangleFlatIconButton
 from kivymd.toast import toast
 from kivy.clock import Clock
+from kivy.properties import BooleanProperty, NumericProperty, StringProperty, ObjectProperty
+
 
 from kivy_matplotlib_widget.uix.graph_widget import MatplotFigure
 
@@ -21,9 +23,19 @@ import matplotlib.pyplot as plt
 from collections import Counter
 from dateutil.relativedelta import relativedelta
 
+from config import SERIE_COUNT, SMILEY_DATA, SMILEY_ICON_SIZE, FONT_SIZE_BUTTON, FONT_SIZE_BUTTON2, FONT_STYLE_SUBTITLE1, FONT_STYLE_SUBTITLE2, ICON_SIZE
+
+
 # from app.logic.profile_logic import ProfileController
 
 class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous les fichiers KV un bloc qui correspond à cette classe
+
+    # Properties pour l'UI
+    font_size_button = NumericProperty(FONT_SIZE_BUTTON) # taille du texte des boutons
+    font_size_button2 = NumericProperty(FONT_SIZE_BUTTON2) # taille du texte des boutons secondaires
+    font_style_subtitle1 = StringProperty(FONT_STYLE_SUBTITLE1) # style du texte des sous-titres
+    font_style_subtitle2 = StringProperty(FONT_STYLE_SUBTITLE2) # style du texte des titres des encadrés
+    icon_size = NumericProperty(ICON_SIZE) # taille des icônes
 
     def __init__(self, app=None, **kwargs):
         super().__init__(**kwargs) # super() appelle _init_ de la class parent
@@ -244,7 +256,7 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
 
                 # --- 4) Etat ---
                 if not record.get("Etat"):
-                    record["Etat"] = self.app.smiley_data[5][0]
+                    record["Etat"] = SMILEY_DATA[5][0]
 
                 # --- 5) Notes ---
                 if not record.get("Notes"):
