@@ -36,16 +36,14 @@
 					pos_hint: {"center_x": 0.5, "center_y": 0.5}
 			
 				# --- GIF animé comme loader ---
-				FolderAnimation:
+				AsyncImage:
 					id: loader_gif
-					image_folder: "assets/loader_frames"
-					interval: 0.05
-					loop: True
-					allow_stretch: True
-					keep_ratio: True
+					source: root.loader_icon_source
 					size_hint: None, None
-					size: dp(60), dp(60)
+					height: dp(60)
+					width: dp(60)
 					pos_hint: {"center_x": 0.5, "center_y": 0.5}
+					anim_delay: 0.02  # Vitesse d'animation (50ms par frame)
 					opacity: 1
 				
 

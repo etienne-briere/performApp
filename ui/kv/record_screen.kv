@@ -442,29 +442,37 @@
 					on_release: root.open_file_manager_export()
 	
 	# --- GIF animé comme loader ---
-	FolderAnimation:
+	# FolderAnimation:
+	# 	id: loader_gif
+	# 	image_folder: root.loader_icon_source
+	# 	interval: 0.05
+	# 	loop: True
+	# 	allow_stretch: False
+	# 	keep_ratio: True
+	# 	size_hint: None, None
+	# 	size: dp(60), dp(60)
+	# 	pos_hint: {"center_x": 0.5, "center_y": 0.5}
+	# 	opacity: 0
+
+	AsyncImage:
 		id: loader_gif
-		image_folder: "assets/loader_frames"
-		interval: 0.05
-		loop: True
-		allow_stretch: False
-		keep_ratio: True
+		source: root.loader_icon_source
 		size_hint: None, None
-		size: dp(60), dp(60)
+		height: dp(60)
+		width: dp(60)
 		pos_hint: {"center_x": 0.5, "center_y": 0.5}
+		anim_delay: 0.02  # Vitesse d'animation (50ms par frame)
 		opacity: 0
 	
-	# --- GIF animé comme success ---
-	FolderAnimation:
+	# # --- GIF animé comme success ---
+	AsyncImage:
 		id: success_gif
-		image_folder: "assets/check"
-		interval: 0.1
-		loop: False
-		allow_stretch: False
-		keep_ratio: True
+		source: root.success_icon_source
 		size_hint: None, None
-		size: dp(60), dp(60)
+		height: dp(100)
+		width: dp(100)
 		pos_hint: {"center_x": 0.5, "center_y": 0.5}
+		anim_delay: 0.02  # Vitesse d'animation (50ms par frame)
 		opacity: 0
 				
 				

@@ -21,6 +21,8 @@ class HistoryScreen(MDScreen):
     font_style_subtitle1 = StringProperty(FONT_STYLE_SUBTITLE1) # style du texte des sous-titres
     font_style_subtitle2 = StringProperty(FONT_STYLE_SUBTITLE2) # style du texte des titres des encadrés
     icon_size = NumericProperty(ICON_SIZE) # taille des icônes
+    loader_icon_source = StringProperty("assets/loading.gif")
+
 
     def __init__(self, app=None, **kwargs):
         super().__init__(**kwargs)

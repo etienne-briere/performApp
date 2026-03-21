@@ -14,6 +14,7 @@ from kivymd.toast import toast
 from kivy.clock import Clock
 from kivy.utils import platform
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty, ObjectProperty
+from kivy.uix.image import AsyncImage
 
 if platform == "android":
     from jnius import autoclass, cast
@@ -35,9 +36,11 @@ class RecordScreen(MDScreen):
     font_style_subtitle1 = StringProperty(FONT_STYLE_SUBTITLE1) # style du texte des sous-titres
     font_style_subtitle2 = StringProperty(FONT_STYLE_SUBTITLE2) # style du texte des titres des encadrés
     icon_size = NumericProperty(ICON_SIZE) # taille des icônes
+    loader_icon_source = StringProperty("assets/loading.gif")
+    success_icon_source = StringProperty("assets/congratulations.gif")
 
     def __init__(self, app=None, **kwargs):
-        super().__init__(**kwargs) # ²super() appelle _init_ de la class parent
+        super().__init__(**kwargs) # super() appelle _init_ de la class parent
         self.app = app
 
         self.initialized = False
@@ -47,17 +50,6 @@ class RecordScreen(MDScreen):
         self.smiley_buttons = []
         self.all_exercise_dfs = dict()
         self.series_inputs = [] # stockage des champs des séries
-        
-        # Données smileys
-        self.smiley_data = [
-            ("emoticon-dead-outline", (1, 0, 0, 1)),  # Rouge
-            ("emoticon-sad-outline", (1, 0.4, 0, 1)),  # Orange foncé
-            ("emoticon-neutral-outline", (1, 0.7, 0, 1)),  # Jaune/orangé
-            ("emoticon-happy-outline", (0.4, 0.8, 0, 1)),  # Vert clair
-            ("emoticon-excited-outline", (0, 0.7, 0.2, 1)),  # Vert foncé
-            ("close-outline", "gray")  # Etat inconnu
-        ]
-
 
     def on_kv_post(self, base_widget):
         """
