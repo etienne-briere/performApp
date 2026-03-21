@@ -37,9 +37,8 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
     font_style_subtitle2 = StringProperty(FONT_STYLE_SUBTITLE2) # style du texte des titres des encadrés
     icon_size = NumericProperty(ICON_SIZE) # taille des icônes
 
-    def __init__(self, app=None, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs) # super() appelle _init_ de la class parent
-        self.app = app
 
         self.dict_exo = None
         self.menu_name_exercise_item = []
@@ -116,6 +115,12 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
 
         # Autoriser les glissements
         self.ids.perf_graph_widget.touch_mode = "pan"
+    
+    def on_enter(self):
+        app = App.get_running_app()
+
+        # Managers
+        self.profile = app.profile
 
     def update_exercise_menu_button_text(self, new_text):
         """

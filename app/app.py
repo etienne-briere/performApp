@@ -12,8 +12,9 @@ from datetime import datetime, timedelta, time
 # Custom modules
 from config import THEME_STYLE, PRIMARY_PALETTE, ACCENT_PALETTE
 from app.logic.profile_logic import ProfileController
-from app.core.sync_service import SyncService
-from app.widgets.folder_animation import FolderAnimation
+from ui.screens.record_screen import RecordScreen
+from ui.screens.view_screen import ViewScreen
+from ui.screens.history_screen import HistoryScreen
 
 # Logger
 from utils.logger import get_logger
@@ -30,6 +31,9 @@ class PerformApp(MDApp):
         super().__init__(**kwargs)
 
         # Initialisation des attributs de l'application
+        self.view = None
+        self.record = None
+        self.history = None
         self.profile = None
         self.sync = None
 
@@ -42,8 +46,11 @@ class PerformApp(MDApp):
         logger.info("Construction de l'interface...")
 
         # Initialiser les gestionnaires
-        self.profile = ProfileController(app=self)
-        self.sync = SyncService(self)
+        # self.record = RecordScreen()
+        # self.view = ViewScreen()
+        # self.history = HistoryScreen()
+        self.profile = ProfileController()
+        # self.sync = SyncService()
 
         # Définir le thème de l'application
         self.theme_cls.theme_style = THEME_STYLE

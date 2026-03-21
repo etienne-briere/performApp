@@ -24,10 +24,10 @@ class HistoryScreen(MDScreen):
     loader_icon_source = StringProperty("assets/loading.gif")
 
 
-    def __init__(self, app=None, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.app = app
+        # Variables pour la logique
         self.checked_rows = []
         self.origin_screen_name = None
 
@@ -42,7 +42,6 @@ class HistoryScreen(MDScreen):
         # Modif titre
         self.ids.top_bar.title = f"Historique : {self.exercise_name}"
 
-        
 
     def on_enter(self, *args):
         """ Appelé lorsque on entre dans l'écran. """

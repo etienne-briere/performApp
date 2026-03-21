@@ -13,7 +13,6 @@ if platform == "android":
     from jnius import autoclass, cast
     from android import activity
 
-from app.core.auth_service import AuthService
 from openpyxl import load_workbook
 from plyer import filechooser
 from collections import defaultdict
@@ -24,10 +23,9 @@ from datetime import datetime
 class ProfileController:
     """ Chargement des données et création des dictionnaires """
     
-    def __init__(self, app, **kwargs):
+    def __init__(self, **kwargs):
         # Initialisation des variables
         self.profile_menu = None
-        self.app = app
 
         # --- Dictionnaire vide des perfs pour chaque exercice ---
         self.all_exercise_dict = dict()
@@ -40,14 +38,6 @@ class ProfileController:
         """
         if not self.profile_menu:
             menu_items = [
-                {
-                    "text": "Se connecter",
-                    "trailing_icon": "login",
-                    "on_release": lambda: (
-                        self.show_login_dialog(),
-                        self.profile_menu.dismiss()
-                    )
-                },
                 {
                     "text": "Importer ton fichier",
                     "trailing_icon": "download",
@@ -75,70 +65,6 @@ class ProfileController:
     def profile_menu_callback(self, text):
         print(f"Option sélectionnée : {text}")
         self.profile_menu.dismiss()
-
-    def show_login_dialog(self):
-        """Ouvre une fenêtre popup de connexion"""
-        
-        content = Factory.LoginDialogContent()
-        
-        # Zone de dialog (affiche un popup)
-        self.login_dialog = MDDialog(
-            title="Connexion",
-            type="custom",
-            content_cls=content,
-            buttons=[
-                MDFlatButton(text="Annuler", on_release=lambda x: self.login_dialog.dismiss()),
-                MDFlatButton(text="Créer un compte", on_release=self.validate_signup),
-                MDRaisedButton(text="Valider", on_release=self.validate_login),
-            ],
-        )
-        self.login_dialog.open()
-
-    def validate_signup(self, *args):
-        # Récupère les champs via content_cls.ids
-        username = self.login_dialog.content_cls.ids.username_field.text
-        password = self.login_dialog.content_cls.ids.password_field.text
-
-        if not username or not password:
-            toast("Email et mot de passe requis")
-            return
-
-        result = AuthService.signup_user(username, password)
-
-        if result.user:
-            toast("Compte créé !")
-            self.login_dialog.dismiss()
-        else:
-            toast("Erreur lors de la création du compte")
-
-
-    def validate_login(self, *args):
-        # Récupère les champs via content_cls.ids
-        username = self.login_dialog.content_cls.ids.username_field.text
-        password = self.login_dialog.content_cls.ids.password_field.text
-        print("Username:", username)
-        print("Password:", password)
-        
-        user, error = AuthService.login(username, password)
-
-        if user:
-            toast("Connexion réussie ✅")
-            self.on_login_success(user)
-        else:
-            toast(f"Erreur : {error}")
-            print(f"Erreur : {error}")
-        
-        self.login_dialog.dismiss()
-
-    def on_login_success(self, user):
-        """
-        Appelé UNE FOIS connecté
-        """
-        self.app.profile.user_id = user.id
-        self.app.profile.email = user.email
-
-        # Charger les données cloud
-        self.app.sync.load_user_data()
     
     # ---------- Import manuel du fichier ----------
     

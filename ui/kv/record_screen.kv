@@ -92,7 +92,7 @@
 						line_width:1.5
 						pos_hint:{"center_x": 0.5, "center_y": 0.5}
 						size_hint:(1, None)
-						on_release: app.view.create_exercise_menu(sorted(app.profile.all_exercise_dict.keys()), self)
+						on_release: root.view.create_exercise_menu(sorted(root.profile.all_exercise_dict.keys()), self)
 
 					MDIconButton:
                         id: setting_exercise_button
