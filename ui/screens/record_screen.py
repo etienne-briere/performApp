@@ -40,8 +40,6 @@ class RecordScreen(MDScreen):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs) # super() appelle _init_ de la class parent
-        # self.app = app
-        # self.initialized = False
 
         # --- Initialisation des variables ---
         self.selected_smiley = None
@@ -71,9 +69,6 @@ class RecordScreen(MDScreen):
 
         # Configurer les callbacks UDP
 
-        # # Empêche l'initialisation multiple
-        # if self.initialized:
-        #     return
 
         # Créer les boutons de smiley dans l'UI
         for idx, (icon_name, color) in enumerate(SMILEY_DATA[:-1]): # retirer le dernier élement de la liste
@@ -90,9 +85,6 @@ class RecordScreen(MDScreen):
 
             # Ajout dans [smiley_layout]
             self.ids.smiley_layout.add_widget(btn)
-
-        # # Marquer comme initialisé
-        # self.initialized = True
 
     def show_date_picker(self, instance):
         """

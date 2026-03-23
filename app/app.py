@@ -15,6 +15,7 @@ from app.logic.profile_logic import ProfileController
 from ui.screens.record_screen import RecordScreen
 from ui.screens.view_screen import ViewScreen
 from ui.screens.history_screen import HistoryScreen
+from ui.components.topbar import TopBar  
 
 # Logger
 from utils.logger import get_logger
@@ -64,7 +65,8 @@ class PerformApp(MDApp):
         Builder.load_file("ui/kv/settings_screen.kv")
         Builder.load_file("ui/kv/record_screen.kv")
         Builder.load_file("ui/kv/home_screen.kv")
-        Builder.load_file("ui/kv/main.kv")
+        Builder.load_file("ui/kv/topbar.kv")
+        # Builder.load_file("ui/kv/main.kv")
 
         return Builder.load_file("ui/kv/main.kv")
 

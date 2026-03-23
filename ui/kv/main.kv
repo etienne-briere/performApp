@@ -1,8 +1,5 @@
-#:import MDTopAppBar kivymd.uix.toolbar
-# :include ui/login_dialog.kv
-# :include ui/view_screen.kv
-# :include ui/record_screen.kv
-# :include ui/history_screen.kv
+#:import TopBar ui.components.topbar.TopBar
+#:import RecordScreen ui.screens.record_screen.RecordScreen
 #:import RecordScreen ui.screens.record_screen.RecordScreen
 #:import ViewScreen ui.screens.view_screen.ViewScreen
 #:import HistoryScreen ui.screens.history_screen.HistoryScreen
@@ -12,12 +9,15 @@ MDBoxLayout:
     orientation: "vertical"
 
     # ---------- TOP BAR ----------
-    MDTopAppBar:
+    # MDTopAppBar:
+    #     id: top_bar
+    #     title: "Accueil"
+	# 	md_bg_color:(0.12, 0.12, 0.12, 1)
+	# 	left_action_items: [["account-circle", lambda x: app.profile.on_profile_icon_press(x)]]
+	# 	right_action_items: [["cog", lambda x: app.on_settings_press(x)]]
+    TopBar:
         id: top_bar
         title: "Accueil"
-		md_bg_color:(0.12, 0.12, 0.12, 1)
-		left_action_items: [["account-circle", lambda x: app.profile.on_profile_icon_press(x)]]
-		right_action_items: [["cog", lambda x: app.on_settings_press(x)]]
 		
     # ---------- SCREEN MANAGER ----------
     ScreenManager:
