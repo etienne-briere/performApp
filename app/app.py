@@ -10,12 +10,11 @@ from datetime import datetime, timedelta, time
 
 
 # Custom modules
+from app.data.csv_storage import CsvStorage
 from config import THEME_STYLE, PRIMARY_PALETTE, ACCENT_PALETTE
-from app.logic.profile_logic import ProfileController
-from ui.screens.record_screen import RecordScreen
-from ui.screens.view_screen import ViewScreen
-from ui.screens.history_screen import HistoryScreen
-from ui.components.topbar import TopBar  
+# from app.logic.profile_logic import ProfileController
+from app.data.training_data_repository import TrainingDataRepository
+from app.data.file_importer import FileImporter 
 
 # Logger
 from utils.logger import get_logger
@@ -32,11 +31,9 @@ class PerformApp(MDApp):
         super().__init__(**kwargs)
 
         # Initialisation des attributs de l'application
-        self.view = None
-        self.record = None
-        self.history = None
-        self.profile = None
-        self.sync = None
+        self.importer = None
+        self.repo = None
+        self.storage = None
 
         logger.info("Initialisation de l'application KCApp")
 
@@ -47,11 +44,9 @@ class PerformApp(MDApp):
         logger.info("Construction de l'interface...")
 
         # Initialiser les gestionnaires
-        # self.record = RecordScreen()
-        # self.view = ViewScreen()
-        # self.history = HistoryScreen()
-        self.profile = ProfileController()
-        # self.sync = SyncService()
+        self.repo = TrainingDataRepository()
+        self.importer = FileImporter(repo=self.repo)
+        self.storage = CsvStorage(folder_path="my_training_data")
 
         # Définir le thème de l'application
         self.theme_cls.theme_style = THEME_STYLE
@@ -66,7 +61,6 @@ class PerformApp(MDApp):
         Builder.load_file("ui/kv/record_screen.kv")
         Builder.load_file("ui/kv/home_screen.kv")
         Builder.load_file("ui/kv/topbar.kv")
-        # Builder.load_file("ui/kv/main.kv")
 
         return Builder.load_file("ui/kv/main.kv")
 

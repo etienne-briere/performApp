@@ -24,47 +24,9 @@ class ProfileController:
     """ Chargement des données et création des dictionnaires """
     
     def __init__(self, **kwargs):
-        # Initialisation des variables
-        self.profile_menu = None
-
+        
         # --- Dictionnaire vide des perfs pour chaque exercice ---
         self.all_exercise_dict = dict()
-
-    def on_profile_icon_press(self, button):
-        """
-        Ouvre un menu déroulant
-        :param button: bouton cliqué
-        :return:
-        """
-        if not self.profile_menu:
-            menu_items = [
-                {
-                    "text": "Importer ton fichier",
-                    "trailing_icon": "download",
-                    "on_release": lambda: (
-                        self.open_file_manager_import(),
-                        self.profile_menu.dismiss()
-                    )
-                },
-                {
-                    "text": "Exporter ton fichier",
-                    "trailing_icon": "file-plus",
-                    "on_release": lambda: self.profile_menu_callback("Créé ton fichier")
-                },
-            ]
-
-            self.profile_menu = MDDropdownMenu(
-                caller=button,
-                items=menu_items,
-                width_mult=4,
-                radius=dp(10),
-            )
-
-        self.profile_menu.open()
-
-    def profile_menu_callback(self, text):
-        print(f"Option sélectionnée : {text}")
-        self.profile_menu.dismiss()
     
     # ---------- Import manuel du fichier ----------
     
