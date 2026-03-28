@@ -13,7 +13,7 @@ class TrainingDataRepository:
         self.storage = app.storage
         
         # Initialisation de la base de données en mémoire et du stockage
-        # self.database = {"exercise_library": {}, "sessions": [], "body_weight_history": []}
+        self.database = {"exercise_library": {}, "sessions": [], "body_weight_history": []}
 
     def load_from_file(self, file_path):
         """Point d'entrée unique : importe et convertit."""

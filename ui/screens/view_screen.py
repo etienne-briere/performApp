@@ -116,19 +116,39 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         # Autoriser les glissements
         self.ids.perf_graph_widget.touch_mode = "pan"
     
-    def on_enter(self):
+    def on_pre_enter(self):
         app = App.get_running_app()
 
         # Managers
-        self.profile = app.profile
+        self.importer = app.importer
 
-    def update_exercise_menu_button_text(self, new_text):
-        """
-        MAJ du texte du bouton exercice.
-        :param new_text: texte choisi
-        :return:
-        """
-        self.ids.exercise_menu_button.text = new_text
+        # # Bind pour les futurs changements
+        # self.importer.bind(exercise_names=self.on_exercises_loaded)
+
+        # # Récupérer l’état actuel
+        # if self.importer.exercise_names:
+        #     self.on_exercises_loaded(self.importer, self.importer.exercise_names)
+
+    
+    # def on_leave(self):
+    #     """Exécuter quand l'écran est quitté."""
+
+    #     # Délier l'événement pour éviter les mises à jour non désirées quand on n'est pas sur cet écran
+    #     # self.importer.unbind(exercise_names=self.on_exercises_loaded)
+    
+    # def on_exercises_loaded(self, instance, exercise_names):
+    #     if exercise_names:
+    #         print(f"Exercices chargés : {exercise_names}")
+    #         self.update_exercise_menu_button_text(exercise_names[0])
+    #         # self.select_exercise(exercise_names[0])
+
+    # def update_exercise_menu_button_text(self, new_text):
+    #     """
+    #     MAJ du texte du bouton exercice.
+    #     :param new_text: texte choisi
+    #     :return:
+    #     """
+    #     self.ids.exercise_menu_button.text = new_text
     
     def create_exercise_menu(self, list_exercises, caller_button):
         """

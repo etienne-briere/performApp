@@ -31,11 +31,11 @@ class PerformApp(MDApp):
         super().__init__(**kwargs)
 
         # Initialisation des attributs de l'application
-        self.importer = None
         self.repo = None
+        self.importer = None
         self.storage = None
 
-        logger.info("Initialisation de l'application KCApp")
+        logger.info("Initialisation de l'application")
 
     def build(self):
         '''

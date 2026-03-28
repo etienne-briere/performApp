@@ -64,11 +64,7 @@ class RecordScreen(MDScreen):
         app = App.get_running_app()
 
         # Managers
-        self.profile = app.profile
-        self.view = app.view
-
-        # Configurer les callbacks UDP
-
+        self.importer = app.importer
 
         # Créer les boutons de smiley dans l'UI
         for idx, (icon_name, color) in enumerate(SMILEY_DATA[:-1]): # retirer le dernier élement de la liste

@@ -50,7 +50,7 @@
 					
 					MDRectangleFlatIconButton:
 						id: exercise_menu_button	
-						text:"Ajoute un exercice"
+						text: app.importer.exercise_names[0] if app.importer.exercise_names else "Ajoute un exercice"
 						text_color:"white"
 						font_size:root.font_size_button
 						icon:"menu-swap"

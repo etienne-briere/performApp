@@ -1,22 +1,34 @@
 
+# KivyMD et Kivy
+from kivymd.toast import toast
+from kivy.app import App
+from kivy.event import EventDispatcher
+from kivy.properties import ListProperty
+from kivy.utils import platform
+
+# Gestionnaires
+from app.data.data_converter import DataConverter
+
+# Utilitaires
 from plyer import filechooser
 from openpyxl import load_workbook
 import os
 
-from kivymd.toast import toast
-
-from kivy.utils import platform
-from kivy.app import App
-
-from app.data.data_converter import DataConverter
+# Android-specific imports
 if platform == "android":
     from jnius import autoclass, cast
     from android import activity
 
-class FileImporter:
 
-    def __init__(self, repo):
-        self.repo = repo # Accès à la base de données via l'application
+class FileImporter(EventDispatcher):
+
+    exercise_names = ListProperty([])
+    
+    def __init__(self, repo, **kwargs):
+        super().__init__(**kwargs)
+
+        # Gestionnaire de données
+        self.repo = repo
 
     def read_excel(self,file_path) -> dict:
         """Lit un .xlsx et retourne un dict brut {sheet_name: [row_dict]}."""
@@ -130,15 +142,13 @@ class FileImporter:
 
         # Maintenant safe : file_path est une string
         if any(file_path.endswith(ext) for ext in [".xls", ".xlsx", ".csv"]):
-            # traiter le fichier
-            # try:
             # Charger le fichier
             self.all_exercise_dict = self.read_excel(file_path)
             print(f"Dictionnaire complet importé : {self.all_exercise_dict}")
 
             convert = DataConverter()
             database = convert.from_legacy(self.all_exercise_dict)
-            # print(f"Dictionnaire converti : {database}")
+            print(f"Dictionnaire converti : {database}")
 
             # # Récupérer le nom de la première feuille
             # first_key = list(self.all_exercise_dict.keys())[0]
@@ -152,23 +162,10 @@ class FileImporter:
 
             # Charger la base complète depuis le dossier CSV
             # database = self.import_database_from_csv(folder_path="my_training_data")
-
-            # Vérifier la structure
-            print(database.keys())
-            print(f"Dictionnaire converti : {database}")
             
             # liste des noms des exercices
-            exercise_names = self.repo.get_exercise_names(database)
-            print(f"Exercices dans la base : {exercise_names}")
+            self.exercise_names = self.repo.get_exercise_names(database)    
 
-            # Ajouter dans l'onglet [VISUALISATION]
-            self.app.view.update_exercise_menu_button_text(exercise_names[0])
-            self.app.view.select_exercise(exercise_names[0])
-
-            # except Exception as e:
-            #     toast(f"Erreur : {str(e)}",
-            #           # background=[0.8, 0.3, 0.3, 1]
-            #           )
-            #     print("erreur :" + str(e))
         else:
             toast(text="Extension non supportée")
+    
