@@ -30,6 +30,7 @@ class FileImporter(EventDispatcher):
         # Gestionnaire de données
         self.repo = repo
 
+
     def read_excel(self,file_path) -> dict:
         """Lit un .xlsx et retourne un dict brut {sheet_name: [row_dict]}."""
         wb = load_workbook(file_path, data_only=True)
@@ -150,13 +151,6 @@ class FileImporter(EventDispatcher):
             database = convert.from_legacy(self.all_exercise_dict)
             print(f"Dictionnaire converti : {database}")
 
-            # # Récupérer le nom de la première feuille
-            # first_key = list(self.all_exercise_dict.keys())[0]
-
-            # # Ajouter dans l'onglet [VISUALISATION]
-            # self.app.view.update_exercise_menu_button_text(first_key)
-            # self.app.view.select_exercise(first_key)
-
             # Alerter l'utilisateur
             toast("Fichier chargé avec succès !")
 
@@ -164,7 +158,12 @@ class FileImporter(EventDispatcher):
             # database = self.import_database_from_csv(folder_path="my_training_data")
             
             # liste des noms des exercices
-            self.exercise_names = self.repo.get_exercise_names(database)    
+            self.exercise_names = self.repo.get_exercise_names(database)
+
+            # Informer l'app que l'exercise sélectionné par défaut est le 1er
+            if self.exercise_names:
+                app = App.get_running_app()
+                app.selected_exercise = self.exercise_names[0]    
 
         else:
             toast(text="Extension non supportée")

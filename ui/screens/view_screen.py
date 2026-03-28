@@ -25,9 +25,6 @@ from dateutil.relativedelta import relativedelta
 
 from config import SERIE_COUNT, SMILEY_DATA, SMILEY_ICON_SIZE, FONT_SIZE_BUTTON, FONT_SIZE_BUTTON2, FONT_STYLE_SUBTITLE1, FONT_STYLE_SUBTITLE2, ICON_SIZE
 
-
-# from app.logic.profile_logic import ProfileController
-
 class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous les fichiers KV un bloc qui correspond à cette classe
 
     # Properties pour l'UI
@@ -41,7 +38,8 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         super().__init__(**kwargs) # super() appelle _init_ de la class parent
 
         self.dict_exo = None
-        self.menu_name_exercise_item = []
+        # self.menu_name_exercise_item = []
+        self.menu_items = []
 
     def on_kv_post(self, base_widget):
         """
@@ -122,63 +120,34 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         # Managers
         self.importer = app.importer
 
-        # # Bind pour les futurs changements
-        # self.importer.bind(exercise_names=self.on_exercises_loaded)
 
-        # # Récupérer l’état actuel
-        # if self.importer.exercise_names:
-        #     self.on_exercises_loaded(self.importer, self.importer.exercise_names)
-
-    
-    # def on_leave(self):
-    #     """Exécuter quand l'écran est quitté."""
-
-    #     # Délier l'événement pour éviter les mises à jour non désirées quand on n'est pas sur cet écran
-    #     # self.importer.unbind(exercise_names=self.on_exercises_loaded)
-    
-    # def on_exercises_loaded(self, instance, exercise_names):
-    #     if exercise_names:
-    #         print(f"Exercices chargés : {exercise_names}")
-    #         self.update_exercise_menu_button_text(exercise_names[0])
-    #         # self.select_exercise(exercise_names[0])
-
-    # def update_exercise_menu_button_text(self, new_text):
-    #     """
-    #     MAJ du texte du bouton exercice.
-    #     :param new_text: texte choisi
-    #     :return:
-    #     """
-    #     self.ids.exercise_menu_button.text = new_text
-    
-    def create_exercise_menu(self, list_exercises, caller_button):
+    def open_exercise_menu(self, caller):
         """
-        Créé le menu déroulant des noms des exercices.
-        :param list_exercises: liste des noms des exercices du fichier importé
-        :param caller_button: instance du boutton cliqué
+        Ouvre le menu déroulant des noms des exercices.
+        :param caller: instance du boutton cliqué
         :return:
         """
-        if len(list_exercises)==0:
+        items = self.importer.exercise_names
+
+        if not items:
             self.open_add_exercise_dialog()
             return
-        
-        # Items du menu (noms des exercices)
-        self.menu_name_exercise_item = [
+
+        self.menu_items = [
             {
                 "text": name,
-                "on_release": lambda x=name: self.select_exercise(x)
+                "viewclass": "OneLineListItem", # permet d'avoir un menu plus compact
+                "on_release": lambda x=name: self.select_exercise(x),
             }
-            for name in list_exercises
+            for name in items
         ]
 
-        # Créer le menu déroulant des exos
-        self.exercise_menu = MDDropdownMenu(
-            caller=caller_button,
-            items=self.menu_name_exercise_item,
-            width_mult=4
+        self.menu = MDDropdownMenu(
+            caller=caller,
+            items=self.menu_items,
+            width_mult=4,
         )
-
-        # Ouvrir le menu
-        self.exercise_menu.open()
+        self.menu.open()
    
     def select_exercise(self, name):
         """
@@ -190,9 +159,9 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         # Associer nom de l'exo choisi à une variable
         self.selected_exercise_name = name
 
-        # Fermer le menu si self.exercice_menu existe
-        if hasattr(self, "exercise_menu"):
-            self.exercise_menu.dismiss()
+        # Fermer le menu si self.menu existe
+        if hasattr(self, "menu"):
+            self.menu.dismiss()
 
         # Nettoyer les données
         self.clean_all_exercises()

@@ -5,6 +5,7 @@ from kivymd.app import MDApp
 from kivy.lang import Builder
 from kivy.core.window import Window
 from kivy.metrics import dp, sp
+from kivy.properties import StringProperty
 
 from datetime import datetime, timedelta, time
 
@@ -14,7 +15,8 @@ from app.data.csv_storage import CsvStorage
 from config import THEME_STYLE, PRIMARY_PALETTE, ACCENT_PALETTE
 # from app.logic.profile_logic import ProfileController
 from app.data.training_data_repository import TrainingDataRepository
-from app.data.file_importer import FileImporter 
+from app.data.file_importer import FileImporter
+from ui.widgets.exercise_dropdown import ExerciseDropdown 
 
 # Logger
 from utils.logger import get_logger
@@ -26,6 +28,8 @@ class PerformApp(MDApp):
     """
     Application principale PerformApp
     """
+    
+    selected_exercise = StringProperty("")
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -61,6 +65,7 @@ class PerformApp(MDApp):
         Builder.load_file("ui/kv/record_screen.kv")
         Builder.load_file("ui/kv/home_screen.kv")
         Builder.load_file("ui/kv/topbar.kv")
+        Builder.load_file("ui/kv/exercise_dropdown.kv")
 
         return Builder.load_file("ui/kv/main.kv")
 
