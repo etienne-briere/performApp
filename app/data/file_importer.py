@@ -20,9 +20,7 @@ if platform == "android":
     from android import activity
 
 
-class FileImporter(EventDispatcher):
-
-    exercise_names = ListProperty([])
+class FileImporter:
     
     def __init__(self, repo, **kwargs):
         super().__init__(**kwargs)
@@ -117,54 +115,34 @@ class FileImporter(EventDispatcher):
         return temp_path
 
     def select_file(self, selection):
-        """Callback quand un fichier est sélectionné"""
 
-        print(f"Sélection : {selection}")
-
-        # selection est soit None, soit une liste vide, soit [chemin]
         if not selection:
             toast("Aucun fichier sélectionné")
-            print("Aucun fichier sélectionné (ou annulation).")
             return
 
-        file_path = selection[0]  # premier fichier choisi
-        print("Fichier choisi :", file_path)
+        file_path = selection[0]
+
         if not file_path:
             toast("Fichier invalide")
-            print("Fichier invalide")
             return
 
-        # Si on est sur Android → convertir content:// en vrai fichier
         if file_path.startswith("content://"):
-            print("URI détectée → copie vers fichier temporaire")
             file_path = self.copy_uri_to_temp_file(file_path)
 
         print("Chemin final utilisé :", file_path)
 
-        # Maintenant safe : file_path est une string
         if any(file_path.endswith(ext) for ext in [".xls", ".xlsx", ".csv"]):
-            # Charger le fichier
-            self.all_exercise_dict = self.read_excel(file_path)
-            print(f"Dictionnaire complet importé : {self.all_exercise_dict}")
+            
+            # Récupérer les donnnées
+            raw = self.read_excel(file_path)
 
-            convert = DataConverter()
-            database = convert.from_legacy(self.all_exercise_dict)
-            print(f"Dictionnaire converti : {database}")
+            # Envoi au repository
+            self.repo.load_from_file(raw)
 
-            # Alerter l'utilisateur
             toast("Fichier chargé avec succès !")
 
-            # Charger la base complète depuis le dossier CSV
-            # database = self.import_database_from_csv(folder_path="my_training_data")
-            
-            # liste des noms des exercices
-            self.exercise_names = self.repo.get_exercise_names(database)
-
-            # Informer l'app que l'exercise sélectionné par défaut est le 1er
-            if self.exercise_names:
-                app = App.get_running_app()
-                app.selected_exercise = self.exercise_names[0]    
-
         else:
-            toast(text="Extension non supportée")
+            toast("Extension non supportée")
     
+
+        

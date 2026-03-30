@@ -5,7 +5,7 @@ from kivymd.app import MDApp
 from kivy.lang import Builder
 from kivy.core.window import Window
 from kivy.metrics import dp, sp
-from kivy.properties import StringProperty
+from kivy.properties import StringProperty, ListProperty
 
 from datetime import datetime, timedelta, time
 
@@ -30,7 +30,8 @@ class PerformApp(MDApp):
     """
     
     selected_exercise = StringProperty("")
-
+    exercise_history = ListProperty([])
+    
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -95,3 +96,18 @@ class PerformApp(MDApp):
         """
         self.root.ids.screen_manager.current = screen_name
         self.root.ids.top_bar.title = title
+    
+    def on_selected_exercise(self, instance, value):
+        """Réagit au changement de l'exercice sélectionné"""
+        if not value:
+            return
+
+        print(f"Exercice sélectionné : {value}")
+
+        # 🔥 récupérer le repo
+        repo = self.repo
+
+        # 🔥 mettre à jour l’historique automatiquement
+        self.exercise_history = repo.get_exercise_history(value, repo.database)
+
+        print(f"Historique mis à jour : {self.exercise_history}")

@@ -120,34 +120,6 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         # Managers
         self.importer = app.importer
 
-
-    def open_exercise_menu(self, caller):
-        """
-        Ouvre le menu déroulant des noms des exercices.
-        :param caller: instance du boutton cliqué
-        :return:
-        """
-        items = self.importer.exercise_names
-
-        if not items:
-            self.open_add_exercise_dialog()
-            return
-
-        self.menu_items = [
-            {
-                "text": name,
-                "viewclass": "OneLineListItem", # permet d'avoir un menu plus compact
-                "on_release": lambda x=name: self.select_exercise(x),
-            }
-            for name in items
-        ]
-
-        self.menu = MDDropdownMenu(
-            caller=caller,
-            items=self.menu_items,
-            width_mult=4,
-        )
-        self.menu.open()
    
     def select_exercise(self, name):
         """
@@ -155,7 +127,6 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         :param name: Nom de l'exercice
         :return:
         """
-
         # Associer nom de l'exo choisi à une variable
         self.selected_exercise_name = name
 

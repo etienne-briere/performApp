@@ -49,19 +49,6 @@
 					height: dp(50)
 					
 					ExerciseDropdown:
-					# MDRectangleFlatIconButton:
-					# 	id: exercise_menu_button	
-					# 	text: app.importer.exercise_names[0] if app.importer.exercise_names else "Ajoute un exercice"
-					# 	text_color:"white"
-					# 	font_size:root.font_size_button
-					# 	icon:"menu-swap"
-					# 	icon_color:"white"
-					# 	line_color:"red"
-					# 	line_width:1.5
-					# 	pos_hint:{"center_x": 0.5, "center_y": 0.5}
-					# 	size_hint:(1, None)
-					# 	# on_release: app.view.create_exercise_menu(sorted(app.profile.all_exercise_dict.keys()), self)
-					# 	on_release: root.open_exercise_menu(self)
 
 					MDIconButton:
                         id: setting_exercise_button
@@ -72,7 +59,7 @@
                         text_color: "white"
                         pos_hint: {"center_y": 0.5}
                         size_hint: None, None
-                        on_release: app.view.create_exercise_settings(self)
+                        on_release: root.create_exercise_settings(self)
 				
 				# --- Contenant de l'espace + Button accès à l'historique ---
 				MDBoxLayout:

@@ -7,14 +7,12 @@ from kivy.properties import NumericProperty
 
 class ExerciseDropdown(MDRectangleFlatIconButton):
 
-    selected_exercise = StringProperty("Ajoute un exercice")
-
     # Properties pour l'UI
     font_size_button = NumericProperty(FONT_SIZE_BUTTON) # taille du texte des boutons
 
     def on_release(self):
         app = App.get_running_app()
-        items = app.importer.exercise_names
+        items = app.repo.exercise_names
 
         if not items:
             return
@@ -37,7 +35,8 @@ class ExerciseDropdown(MDRectangleFlatIconButton):
     
     def select_exercise(self, name):
         app = App.get_running_app()
-        app.selected_exercise = name
+        app.selected_exercise = name # déclenche la mise à jour de l'historique via on_selected_exercise dans app.py
 
+        # Fermer le menu
         if hasattr(self, "menu"):
             self.menu.dismiss()
