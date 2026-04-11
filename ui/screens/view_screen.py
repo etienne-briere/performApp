@@ -23,6 +23,7 @@ import matplotlib.pyplot as plt
 from collections import Counter
 from dateutil.relativedelta import relativedelta
 
+from app import app
 from config import SERIE_COUNT, SMILEY_DATA, SMILEY_ICON_SIZE, FONT_SIZE_BUTTON, FONT_SIZE_BUTTON2, FONT_STYLE_SUBTITLE1, FONT_STYLE_SUBTITLE2, ICON_SIZE
 
 class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous les fichiers KV un bloc qui correspond à cette classe
@@ -33,6 +34,7 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
     font_style_subtitle1 = StringProperty(FONT_STYLE_SUBTITLE1) # style du texte des sous-titres
     font_style_subtitle2 = StringProperty(FONT_STYLE_SUBTITLE2) # style du texte des titres des encadrés
     icon_size = NumericProperty(ICON_SIZE) # taille des icônes
+    period_label = StringProperty("") # label de la période sélectionnée (ex: "01 Jan - 31 Jan")
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs) # super() appelle _init_ de la class parent
@@ -120,7 +122,25 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         # Managers
         self.importer = app.importer
 
+        # 🔥 écouter les changements d'historique et de période
+        app.bind(exercise_history=self.update_graphs)
+        app.bind(selected_period=self.update_graphs)
+        app.bind(time_offset=self.update_graphs)
+        app.bind(selected_period=self.update_period_label)
+        app.bind(time_offset=self.update_period_label)
+
+        self.update_period_label()
+
+        # 🔥 charger l'état actuel (important)
+        if app.exercise_history:
+            self.update_graphs(app, app.exercise_history)
    
+    def on_leave(self):
+        app = App.get_running_app()
+
+        app.unbind(exercise_history=self.update_graphs)
+        app.unbind(selected_period=self.update_graphs)
+
     def select_exercise(self, name):
         """
         Modifier les widgets quand l'exercice est sélectionné.
@@ -173,6 +193,142 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
             # Graphique des performances
             self.update_graph_perf(self.dict_exo)
 
+    def update_period_label(self, *args):
+
+        app = App.get_running_app()
+        now = datetime.now()
+
+        if app.selected_period == "7d":
+            delta = timedelta(days=7)
+        elif app.selected_period == "1m":
+            delta = relativedelta(months=1)
+        else:
+            delta = relativedelta(years=1)
+
+        end_date = now - app.time_offset * delta
+        start_date = end_date - delta
+
+        # 🔥 format dynamique
+        if app.selected_period == "7d" or app.selected_period == "1m":
+            text = f"{start_date.strftime('%d %b')} - {end_date.strftime('%d %b')}"
+        
+        # elif app.selected_period == "all":
+        #     text = f"{start_date.strftime('%B %Y')} - {end_date.strftime('%B %Y')}"
+        
+        else:  # 1 an
+            text = f"{start_date.strftime('%B %Y')} - {end_date.strftime('%B %Y')}"
+
+        self.period_label = text
+
+    def update_graphs(self, instance, history):
+
+        app = App.get_running_app()
+        history = app.exercise_history
+
+        # --- TRI PAR DATE CROISSANTE (important pour les graphiques) ---
+        history = sorted(history, key=lambda x: x["date"])
+
+        # --- FILTRE TEMPOREL ---
+        if app.selected_period == "all":
+            app.time_offset = 0
+        
+        else:
+            now = datetime.now()
+
+            if app.selected_period == "7d":
+                delta = timedelta(days=7)
+            elif app.selected_period == "1m":
+                delta = relativedelta(months=1)
+            elif app.selected_period == "1y":
+                delta = relativedelta(years=1)
+            else : # si all
+                delta = None
+            
+            # 🔥 décalage
+            end_date = now - app.time_offset * delta
+            start_date = end_date - delta
+
+            # 🔥 filtre
+            history = [
+                h for h in history
+                if start_date <= h["date"] < end_date
+]
+        
+        # --- RESET GRAPH ---
+        self.ax1_perf.clear()
+
+        # Supprimer et récréer l'axe 2 pour éviter les problèmes de superposition
+        self.ax2_perf.remove()
+        self.ax2_perf = self.ax1_perf.twinx()
+
+        if not history:
+            self.ax1_perf.text(
+                0.5, 0.5, "Aucune donnée",
+                fontsize=16, color="gray",
+                ha="center", va="center",
+                transform=self.ax1_perf.transAxes
+            )
+            self.perf_graph.canvas.draw_idle()
+            return
+
+        # --- DATA PREP ---
+        dates = []
+        weights = []
+        total_reps = []
+
+        for session in history:
+            dates.append(session["date"])
+
+            sets = session["sets"]
+
+            # poids moyen (ou max)
+            w = max([s["w"] for s in sets]) if sets else 0
+            weights.append(w)
+
+            # total reps
+            reps = sum([s["r"] for s in sets])
+            total_reps.append(reps)
+
+        # --- PLOT AXE 1 (poids soulevés) ---
+        self.ax1_perf.plot(dates, weights, marker='o', color="skyblue", label="Poids (kg)")
+        self.ax1_perf.fill_between(dates, weights, color="skyblue", alpha=0.2)
+
+        # --- PLOT AXE 2 (répétitions) ---
+        self.ax2_perf.plot(dates, total_reps, marker='x', linestyle='--', color="orange", label="Reps")
+        self.ax2_perf.fill_between(dates, total_reps, color="orange", alpha=0.1)
+        
+        # --- STYLE AXE 1 (poids soulevés) ---
+        self.ax1_perf.set_ylabel("Poids (kg)", color="skyblue")
+        # self.ax1_perf.tick_params(axis='x', colors='grey')
+        self.ax1_perf.tick_params(axis='y', colors='skyblue')
+
+        # --- STYLE AXE 2 (répétitions) ---
+        self.ax2_perf.set_ylabel("Total répétitions", color="orange")
+        self.ax2_perf.tick_params(axis='y', colors='orange')
+
+        # --- STYLE EN FONCTION DE LA PÉRIODE SÉLECTIONNÉE ---
+        if app.selected_period == "7d":
+            self.ax1_perf.xaxis.set_major_locator(mdates.DayLocator())
+            self.ax1_perf.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
+
+        elif app.selected_period == "1m":
+            self.ax1_perf.xaxis.set_major_locator(mdates.WeekdayLocator())
+            self.ax1_perf.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
+
+        else:  # 1y ou all
+            self.ax1_perf.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
+            self.ax1_perf.xaxis.set_major_formatter(mdates.DateFormatter("%b %y"))
+
+        # Format de l’axe des X pour les dates
+        self.perf_graph.autofmt_xdate(rotation=45)
+
+        # --- REFRESH ---
+        self.perf_graph.canvas.draw_idle()
+    
+    
+    
+    
+    
     def clean_all_exercises(self):
         """
         Nettoie et prépare toutes les activités enregistrées :
@@ -270,29 +426,29 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
 
         return reordered
 
-    def remove_volume_performance_graphs(self):
-        """
-        Retirer les graphiques de volume et de performance de l'UI.
-        """
+    # def remove_volume_performance_graphs(self):
+    #     """
+    #     Retirer les graphiques de volume et de performance de l'UI.
+    #     """
 
-        self.ids.zone_2_view_content.opacity = 0
-        self.ids.zone_2_view_content.disabled = True  # désactive les clics
+    #     self.ids.zone_2_view_content.opacity = 0
+    #     self.ids.zone_2_view_content.disabled = True  # désactive les clics
 
-        self.ids.zone_3_view_content.opacity = 0
-        self.ids.zone_3_view_content.height = 0
-        self.ids.zone_3_view_content.disabled = True  # désactive les clics
+    #     self.ids.zone_3_view_content.opacity = 0
+    #     self.ids.zone_3_view_content.height = 0
+    #     self.ids.zone_3_view_content.disabled = True  # désactive les clics
 
 
-    def add_volume_performance_graphs(self):
-        """
-        Ajouter les graphiques de volume et de performance de l'UI.
-        """
-        self.ids.zone_2_view_content.opacity = 1
-        self.ids.zone_2_view_content.disabled = False  # active les clics
+    # def add_volume_performance_graphs(self):
+    #     """
+    #     Ajouter les graphiques de volume et de performance de l'UI.
+    #     """
+    #     self.ids.zone_2_view_content.opacity = 1
+    #     self.ids.zone_2_view_content.disabled = False  # active les clics
 
-        self.ids.zone_3_view_content.opacity = 1
-        self.ids.zone_3_view_content.height = self.ids.zone_3_view_content.minimum_height
-        self.ids.zone_3_view_content.disabled = False  # active les clics
+    #     self.ids.zone_3_view_content.opacity = 1
+    #     self.ids.zone_3_view_content.height = self.ids.zone_3_view_content.minimum_height
+    #     self.ids.zone_3_view_content.disabled = False  # active les clics
 
     def update_stats_resume(self, dict_exo):
         """

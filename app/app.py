@@ -5,7 +5,7 @@ from kivymd.app import MDApp
 from kivy.lang import Builder
 from kivy.core.window import Window
 from kivy.metrics import dp, sp
-from kivy.properties import StringProperty, ListProperty
+from kivy.properties import StringProperty, ListProperty, NumericProperty
 
 from datetime import datetime, timedelta, time
 
@@ -29,8 +29,10 @@ class PerformApp(MDApp):
     Application principale PerformApp
     """
     
-    selected_exercise = StringProperty("")
+    selected_exercise = StringProperty("") # dès que valeur change on_selected_exercise est appelé pour mettre à jour l'historique
     exercise_history = ListProperty([])
+    selected_period = StringProperty("1y")  # défaut à 1 an
+    time_offset = NumericProperty(0) # décalage temporel (offset = 0 => période actuelle, offset = -2 => 2 périodes en arrière, etc.)
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -111,3 +113,10 @@ class PerformApp(MDApp):
         self.exercise_history = repo.get_exercise_history(value, repo.database)
 
         print(f"Historique mis à jour : {self.exercise_history}")
+    
+    def on_selected_period(self, instance, value):
+        """Réagit au changement de la période sélectionnée"""
+
+        # Réinitialiser le décalage temporel à 0 pour revenir à la période actuelle
+        self.time_offset = 0
+       

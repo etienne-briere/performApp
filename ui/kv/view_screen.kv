@@ -82,7 +82,37 @@
 						halign: "right"
 						_no_ripple_effect: True
 						on_release: app.history.open_history(self)
-						
+				
+				# --- Sélecteur de période pour le graphique ---
+				MDBoxLayout:
+					size_hint: None, None
+					width: self.minimum_width
+					spacing: "10dp"
+					padding: (dp(10), dp(0))
+					pos_hint: {"center_x": 0.5}
+					opacity: 1 if app.selected_exercise else 0 # invisible tant que pas de données
+					disabled: False if app.selected_exercise else True 
+					height: "40dp" if app.selected_exercise else 0 # hauteur 0 si pas d'exercice sélectionné
+					
+					MDRaisedButton:
+						text: "7j"
+						on_release: app.selected_period = "7d"
+						opacity: 1 if app.selected_period == "7d" else 0.5
+					
+					MDRaisedButton:
+						text: "1 mois"
+						on_release: app.selected_period = "1m"
+						opacity: 1 if app.selected_period == "1m" else 0.5
+
+					MDRaisedButton:
+						text: "1 an"
+						on_release: app.selected_period = "1y"
+						opacity: 1 if app.selected_period == "1y" else 0.5
+
+					MDRaisedButton:
+						text: "All"
+						on_release: app.selected_period = "all"
+						opacity: 1 if app.selected_period == "all" else 0.5
 
 			# --- Contenu de la zone 2 (Bilan volume de l'activité choisi) ---
             MDBoxLayout:
@@ -91,9 +121,9 @@
 				spacing: dp(10)
 				pos_hint: {"center_x": 0.5}
 				size_hint: 1, None
-				height: self.minimum_height
-				opacity:0
-				disabled: True
+				opacity: 1 if app.selected_exercise else 0 # invisible tant que pas de données
+				disabled: False if app.selected_exercise else True 
+				height: self.minimum_height if app.selected_exercise else 0 # hauteur 0 si pas d'exercice sélectionné
 				
 				# --- Titre 2 ---
                 MDLabel:
@@ -124,8 +154,7 @@
 						# Widget matplotlib (figure vide initialement)
 						MatplotFigure:
 							id: volume_graph_widget
-							size_hint: (1, 1)
-							
+							size_hint: (1, 1) 
 					
 					# --- CARD 2 : Résumé des activités ---
 					MDCard:
@@ -226,9 +255,9 @@
 				spacing: dp(10)
 				pos_hint: {"center_x": 0.5}
 				size_hint: (1, None)
-				height: 0
-				opacity: 0
-				disabled: True
+				opacity: 1 if app.selected_exercise else 0 # invisible tant que pas de données
+				disabled: False if app.selected_exercise else True 
+				height: self.minimum_height if app.selected_exercise else 0 # hauteur 0 si pas d'exercice sélectionné
 				
 				# --- Titre 3 ---
                 MDLabel:
@@ -239,6 +268,33 @@
 					font_style: root.font_style_subtitle1
 					size_hint: (1, None)
 					height: dp(10)
+				
+				MDBoxLayout:
+					size_hint_y: None
+					spacing: "10dp"
+					opacity: 0 if app.selected_period=="all" else 1
+					disabled: True if app.selected_period=="all" else False
+					height: 0 if app.selected_period=="all" else "40dp"		
+
+					MDIconButton:
+						icon: "arrow-left-bold-circle-outline"
+						theme_text_color: "Custom"
+                        text_color: "grey"
+						on_release: app.time_offset += 1
+					
+					MDLabel:
+    					text: root.period_label
+						halign: "center"        # ✅ horizontal
+						valign: "middle"        # ✅ vertical
+						size_hint_x: 1          # ✅ prend toute la place
+						text_size: self.size    # ✅ nécessaire pour valign
+						# bold: True
+
+					MDIconButton:
+						icon: "arrow-right-bold-circle-outline"
+						theme_text_color: "Custom"
+                        text_color: "grey"
+						on_release: app.time_offset = max(0, app.time_offset - 1)
 				
 				# --- Graphique des performances ---
 				MatplotFigure:
