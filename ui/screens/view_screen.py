@@ -49,72 +49,8 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         et que les ids sont disponibles.
         """
 
-        # --- Graphique du Volume ---
-        self.volume_graph, self.volume_ax = plt.subplots()
-        self.volume_graph.patch.set_alpha(0.0)
-        self.volume_ax.set_facecolor("none")
-
-        self.volume_ax.text(
-            0.5, 0.5, "Aucune donnée",
-            fontsize=sp(16), color="gray",
-            ha="center", va="center",
-            transform=self.volume_ax.transAxes
-        )
-
-        self.volume_ax.set_title(
-            "Evolution du volume mensuel des activités (1 an)",
-            color="white"
-        )
-        self.volume_ax.set_ylabel("Nombre d'activités", color="grey")
-
-        # ticks couleur
-        self.volume_ax.tick_params(axis="x", colors="grey")
-        self.volume_ax.tick_params(axis="y", colors="grey")
-
-        # contour
-        for spine in self.volume_ax.spines.values():
-            spine.set_color("grey")
-
-        # Associer la figure au widget MatplotFigure défini dans le kv
-        self.ids.volume_graph_widget.figure = self.volume_graph
-
-        # Autoriser seulement le glissement sur les côtés
-        self.ids.volume_graph_widget.touch_mode = "pan_x"
-
-        # --- Graphique des performances ---
-        self.perf_graph, self.ax1_perf = plt.subplots()
-
-        # ajout du 2ème axe y
-        self.ax2_perf = self.ax1_perf.twinx()
-
-        # Paramétrage du graphique
-        self.perf_graph.patch.set_alpha(0.0)  # rend le fond de la figure transparent
-        self.ax1_perf.set_facecolor("none")  # rend le fond de l’axe transparent
-        self.ax1_perf.margins(x=0, y=0)  # enlève les marges inutiles autour des données
-        self.perf_graph.tight_layout()  # réduire l'espace perdu
-
-        # Texte "Aucune donnée"
-        self.ax1_perf.text(0.5, 0.5, "Aucune donnée", fontsize=sp(16), color="gray",
-                           ha='center', va='center', transform=self.ax1_perf.transAxes)
-
-        # Labels des axes
-        self.ax1_perf.set_ylabel("Poids (kg)", color="grey")
-        self.ax2_perf.set_ylabel("Total répétitions", color="grey")
-
-        # Couleur des ticks
-        self.ax1_perf.tick_params(axis='x', colors='grey')  # axe x (date)
-        self.ax1_perf.tick_params(axis='y', colors='grey')
-        self.ax2_perf.tick_params(axis='y', colors='grey')
-
-        # Couleur du contour des axes
-        for spine in self.ax1_perf.spines.values():
-            spine.set_color('grey')
-
-        # Associer le graphique configuré au widget
-        self.ids.perf_graph_widget.figure = self.perf_graph
-
-        # Autoriser les glissements
-        self.ids.perf_graph_widget.touch_mode = "pan"
+        self.initialize_graph_volume()
+        self.initialize_graph_perf()
     
     def on_pre_enter(self):
         app = App.get_running_app()
@@ -140,6 +76,68 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
 
         app.unbind(exercise_history=self.update_graphs)
         app.unbind(selected_period=self.update_graphs)
+
+    def initialize_graph_volume(self):
+        """
+        Initialise le graphique du volume.
+        """
+        
+        # Créer la figure et les axes
+        self.volume_graph, self.volume_ax = plt.subplots()
+
+        # Paramétrage du graphique
+        self.volume_graph.patch.set_alpha(0.0)
+        self.volume_ax.set_facecolor("none")
+        self.volume_ax.margins(x=0, y=0)
+        self.volume_graph.tight_layout()  # réduire l'espace perdu
+
+        # Couleur du contour des axes
+        self.volume_ax.tick_params(axis='x', colors='grey')
+        for spine in self.volume_ax.spines.values():
+            spine.set_color('grey')
+
+        self.volume_ax.set_ylabel("Nombre d'activités", color="grey")
+
+        # ticks couleur
+        self.volume_ax.tick_params(axis="x", colors="grey")
+        self.volume_ax.tick_params(axis="y", colors="grey")
+
+        # Associer la figure au widget MatplotFigure défini dans le kv
+        self.ids.volume_graph_widget.figure = self.volume_graph
+
+        # Désactiver les glissements
+        self.ids.volume_graph_widget.touch_mode = None
+
+    
+    def initialize_graph_perf(self):
+        """
+        Initialise le graphique des performances.
+        """
+
+        # Créer la figure et les axes
+        self.perf_graph, self.ax1_perf = plt.subplots()
+
+        # ajout du 2ème axe y
+        self.ax2_perf = self.ax1_perf.twinx()
+
+        # Paramétrage du graphique
+        self.perf_graph.patch.set_alpha(0.0)  # rend le fond de la figure transparent
+        self.ax1_perf.set_facecolor("none")  # rend le fond de l’axe transparent
+        self.ax1_perf.margins(x=0, y=0)  # enlève les marges inutiles autour des données
+        self.perf_graph.tight_layout()  # réduire l'espace perdu
+
+        # Couleur du contour des axes
+        self.ax1_perf.tick_params(axis='x', colors='grey')
+        for spine in self.ax1_perf.spines.values():
+            spine.set_color('grey')
+
+        # Associer le graphique configuré au widget
+        self.ids.perf_graph_widget.figure = self.perf_graph
+
+        # Désactiver les glissements
+        self.ids.perf_graph_widget.touch_mode = None
+    
+    
 
     def select_exercise(self, name):
         """
@@ -212,48 +210,57 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         if app.selected_period == "7d" or app.selected_period == "1m":
             text = f"{start_date.strftime('%d %b')} - {end_date.strftime('%d %b')}"
         
-        # elif app.selected_period == "all":
-        #     text = f"{start_date.strftime('%B %Y')} - {end_date.strftime('%B %Y')}"
-        
         else:  # 1 an
             text = f"{start_date.strftime('%B %Y')} - {end_date.strftime('%B %Y')}"
 
         self.period_label = text
 
-    def update_graphs(self, instance, history):
+    def update_graphs(self, *args):
 
         app = App.get_running_app()
-        history = app.exercise_history
+        # history = app.exercise_history
 
         # --- TRI PAR DATE CROISSANTE (important pour les graphiques) ---
-        history = sorted(history, key=lambda x: x["date"])
+        history = sorted(app.exercise_history, key=lambda x: x["date"])
+        
+        # Filtrer l'historique en fonction de la période sélectionnée et du décalage temporel
+        filtered_history = self.filter_history(history)
 
-        # --- FILTRE TEMPOREL ---
+        # self.update_graph_volume(filtered_history)
+        self.update_graph_perf(filtered_history)
+
+
+    def filter_history(self, history):
+
+        app = App.get_running_app()
+
         if app.selected_period == "all":
-            app.time_offset = 0
-        
+            return history
+
+        now = datetime.now()
+
+        if app.selected_period == "7d":
+            delta = timedelta(days=7)
+        elif app.selected_period == "1m":
+            delta = relativedelta(months=1)
         else:
-            now = datetime.now()
+            delta = relativedelta(years=1)
 
-            if app.selected_period == "7d":
-                delta = timedelta(days=7)
-            elif app.selected_period == "1m":
-                delta = relativedelta(months=1)
-            elif app.selected_period == "1y":
-                delta = relativedelta(years=1)
-            else : # si all
-                delta = None
-            
-            # 🔥 décalage
-            end_date = now - app.time_offset * delta
-            start_date = end_date - delta
+        end_date = now - app.time_offset * delta
+        start_date = end_date - delta
 
-            # 🔥 filtre
-            history = [
-                h for h in history
-                if start_date <= h["date"] < end_date
-]
-        
+        return [
+            h for h in history
+            if start_date <= h["date"] < end_date
+        ]
+
+
+    def update_graph_perf(self, history):
+        """
+        Met à jour le graphique des performances en fonction de l'historique filtré.
+        :param history: liste des sessions d'entraînement (filtrée selon la période)
+        """
+
         # --- RESET GRAPH ---
         self.ax1_perf.clear()
 
@@ -296,17 +303,17 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         # --- PLOT AXE 2 (répétitions) ---
         self.ax2_perf.plot(dates, total_reps, marker='x', linestyle='--', color="orange", label="Reps")
         self.ax2_perf.fill_between(dates, total_reps, color="orange", alpha=0.1)
-        
-        # --- STYLE AXE 1 (poids soulevés) ---
-        self.ax1_perf.set_ylabel("Poids (kg)", color="skyblue")
-        # self.ax1_perf.tick_params(axis='x', colors='grey')
-        self.ax1_perf.tick_params(axis='y', colors='skyblue')
 
+        # --- STYLE AXE 1 (poids) ---
+        self.ax1_perf.set_ylabel("Poids (kg)", color="skyblue")
+        self.ax1_perf.tick_params(axis='y', colors='skyblue')
+        
         # --- STYLE AXE 2 (répétitions) ---
         self.ax2_perf.set_ylabel("Total répétitions", color="orange")
         self.ax2_perf.tick_params(axis='y', colors='orange')
 
         # --- STYLE EN FONCTION DE LA PÉRIODE SÉLECTIONNÉE ---
+        app = App.get_running_app()
         if app.selected_period == "7d":
             self.ax1_perf.xaxis.set_major_locator(mdates.DayLocator())
             self.ax1_perf.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
@@ -315,7 +322,11 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
             self.ax1_perf.xaxis.set_major_locator(mdates.WeekdayLocator())
             self.ax1_perf.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
 
-        else:  # 1y ou all
+        elif app.selected_period == "all":
+            self.ax1_perf.xaxis.set_major_locator(mdates.AutoDateLocator())
+            self.ax1_perf.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
+
+        else:  # 1y
             self.ax1_perf.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
             self.ax1_perf.xaxis.set_major_formatter(mdates.DateFormatter("%b %y"))
 
@@ -325,10 +336,10 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         # --- REFRESH ---
         self.perf_graph.canvas.draw_idle()
     
-    
-    
-    
-    
+
+
+
+
     def clean_all_exercises(self):
         """
         Nettoie et prépare toutes les activités enregistrées :
@@ -827,47 +838,47 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         # Redessiner matplotlib
         self.volume_graph.canvas.draw_idle()
 
-    def update_graph_perf(self, dict_exo):
-        """
-        MAJ du graph perfs.
-        """
+    # def update_graph_perf(self, dict_exo):
+    #     """
+    #     MAJ du graph perfs.
+    #     """
 
-        # Annuler MAJ si nouvel exercice
-        if len(dict_exo) == 0:
-            return
+    #     # Annuler MAJ si nouvel exercice
+    #     if len(dict_exo) == 0:
+    #         return
 
-        self.ax1_perf.clear()
+    #     self.ax1_perf.clear()
 
-        # Supprime complètement l'axe 2
-        self.ax2_perf.remove()
+    #     # Supprime complètement l'axe 2
+    #     self.ax2_perf.remove()
 
-        # Recréer l'axe 2
-        self.ax2_perf = self.ax1_perf.twinx()
+    #     # Recréer l'axe 2
+    #     self.ax2_perf = self.ax1_perf.twinx()
 
-        # Préparer les données
-        dates = [r["Date"] for r in dict_exo if r.get("Date") is not None]
-        kgs = [r.get("Kg", 0) for r in dict_exo if r.get("Date") is not None]
-        total_reps = [r.get("Total", 0) for r in dict_exo if r.get("Date") is not None]
+    #     # Préparer les données
+    #     dates = [r["Date"] for r in dict_exo if r.get("Date") is not None]
+    #     kgs = [r.get("Kg", 0) for r in dict_exo if r.get("Date") is not None]
+    #     total_reps = [r.get("Total", 0) for r in dict_exo if r.get("Date") is not None]
 
-        # Axe gauche -> Poids soulevé
-        self.ax1_perf.plot(dates, kgs, marker="o", color="skyblue", label="Poids (Kg)")
-        self.ax1_perf.fill_between(dates, kgs, color="skyblue", alpha=0.2)
-        self.ax1_perf.set_ylabel("Poids (Kg)", color="skyblue")
-        self.ax1_perf.tick_params(axis="y", labelcolor="skyblue")
+    #     # Axe gauche -> Poids soulevé
+    #     self.ax1_perf.plot(dates, kgs, marker="o", color="skyblue", label="Poids (Kg)")
+    #     self.ax1_perf.fill_between(dates, kgs, color="skyblue", alpha=0.2)
+    #     self.ax1_perf.set_ylabel("Poids (Kg)", color="skyblue")
+    #     self.ax1_perf.tick_params(axis="y", labelcolor="skyblue")
 
-        # Axe droit -> Total répétitions
-        self.ax2_perf.plot(dates, total_reps, marker="s", color="orange", label="Total répétitions")
-        self.ax2_perf.fill_between(dates, total_reps, color="orange", alpha=0.2)
-        self.ax2_perf.set_ylabel("Total répétitions", color="orange")
-        self.ax2_perf.tick_params(axis="y", labelcolor="orange")
+    #     # Axe droit -> Total répétitions
+    #     self.ax2_perf.plot(dates, total_reps, marker="s", color="orange", label="Total répétitions")
+    #     self.ax2_perf.fill_between(dates, total_reps, color="orange", alpha=0.2)
+    #     self.ax2_perf.set_ylabel("Total répétitions", color="orange")
+    #     self.ax2_perf.tick_params(axis="y", labelcolor="orange")
 
-        # Format de l’axe des X pour les dates : un tick tous les 2 mois
-        self.ax1_perf.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
-        self.ax1_perf.xaxis.set_major_formatter(mdates.DateFormatter("%b%y"))
-        self.perf_graph.autofmt_xdate(rotation=45)
+    #     # Format de l’axe des X pour les dates : un tick tous les 2 mois
+    #     self.ax1_perf.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
+    #     self.ax1_perf.xaxis.set_major_formatter(mdates.DateFormatter("%b%y"))
+    #     self.perf_graph.autofmt_xdate(rotation=45)
 
-        # Limitation de l'axe x (période d'1 an)
-        self.ax1_perf.set_xlim(self.start, self.app.today)
+    #     # Limitation de l'axe x (période d'1 an)
+    #     self.ax1_perf.set_xlim(self.start, self.app.today)
 
-        # Redessiner matplotlib
-        self.perf_graph.canvas.draw_idle()
+    #     # Redessiner matplotlib
+    #     self.perf_graph.canvas.draw_idle()
