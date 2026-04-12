@@ -96,7 +96,7 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         for spine in self.volume_ax.spines.values():
             spine.set_color('grey')
 
-        self.volume_ax.set_ylabel("Nombre d'activités", color="grey")
+        self.volume_ax.set_ylabel("Nombre de séances", color="grey")
 
         # ticks couleur
         self.volume_ax.tick_params(axis="x", colors="grey")
@@ -226,7 +226,7 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         # Filtrer l'historique en fonction de la période sélectionnée et du décalage temporel
         filtered_history = self.filter_history(history)
 
-        # self.update_graph_volume(filtered_history)
+        self.update_graph_volume(filtered_history)
         self.update_graph_perf(filtered_history)
 
 
@@ -254,6 +254,115 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
             if start_date <= h["date"] < end_date
         ]
 
+
+    def update_graph_volume(self, history):
+
+        # --- RESET ---
+        self.volume_ax.clear()
+
+        if not history:
+            self.volume_ax.text(
+                0.5, 0.5, "Aucune donnée",
+                ha="center", va="center",
+                transform=self.volume_ax.transAxes,
+                color="gray"
+            )
+            self.volume_graph.canvas.draw_idle()
+            return
+
+        app = App.get_running_app()
+
+        # --- CHOIX DE L’AGRÉGATION ---
+        # --- 1. remplir le counter ---
+        counter = Counter()
+
+        for session in history:
+            date = session["date"]
+
+            if app.selected_period == "7d":
+                key = date.strftime("%Y-%m-%d")
+
+            elif app.selected_period == "1m":
+                key = date.strftime("%Y-%W")
+
+            else:
+                key = date.strftime("%Y-%m")
+
+            counter[key] += 1
+
+        # --- 2. générer toutes les périodes ---
+        full_keys = []
+        current = min(session["date"] for session in history)
+        end = max(session["date"] for session in history)
+
+        while current <= end:
+            if app.selected_period == "7d":
+                key = current.strftime("%Y-%m-%d")
+                current += timedelta(days=1)
+
+            elif app.selected_period == "1m":
+                key = current.strftime("%Y-%W")
+                current += timedelta(weeks=1)
+
+            else:
+                key = current.strftime("%Y-%m")
+                current += relativedelta(months=1)
+
+            full_keys.append(key)
+
+        # --- 3. reconstruire avec les 0 ---
+        y_counts = [counter.get(k, 0) for k in full_keys]
+
+        # --- 4. recréer les dates ---
+        x_dates = []
+
+        for key in full_keys:
+            if app.selected_period == "7d":
+                dt = datetime.strptime(key, "%Y-%m-%d")
+
+            elif app.selected_period == "1m":
+                dt = datetime.strptime(key + "-1", "%Y-%W-%w")
+
+            else:
+                dt = datetime.strptime(key, "%Y-%m")
+
+            x_dates.append(dt)
+
+        # --- 5. moyenne correcte ---
+        moy = sum(y_counts) / len(y_counts)
+       
+        # --- PLOT ---
+        self.volume_ax.bar(x_dates, y_counts, width=5, color="lightgreen")
+        self.volume_ax.axhline(moy, linestyle="--", alpha=0.5)
+
+        # --- STYLE ---
+        self.volume_ax.set_ylabel("Nombre de séances", color="lightgreen")
+        self.volume_ax.tick_params(axis="y", labelcolor="lightgreen")
+
+        # --- FORMAT AXE X ---
+        if app.selected_period == "7d":
+            self.volume_ax.xaxis.set_major_locator(mdates.DayLocator())
+            self.volume_ax.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
+
+        elif app.selected_period == "1m":
+            self.volume_ax.xaxis.set_major_locator(mdates.WeekdayLocator())
+            self.volume_ax.xaxis.set_major_formatter(mdates.DateFormatter("S%W"))
+        
+        elif app.selected_period == "all":
+            self.volume_ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+            self.volume_ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
+
+        else:  # 1y
+            self.volume_ax.xaxis.set_major_locator(mdates.MonthLocator())
+            self.volume_ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %y"))
+
+        self.volume_graph.autofmt_xdate()
+
+        # --- LIMITE Y ---
+        self.volume_ax.set_ylim(0, max(y_counts) + 1)
+
+        # --- REFRESH ---
+        self.volume_graph.canvas.draw_idle()
 
     def update_graph_perf(self, history):
         """
@@ -335,9 +444,6 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
 
         # --- REFRESH ---
         self.perf_graph.canvas.draw_idle()
-    
-
-
 
 
     def clean_all_exercises(self):
@@ -763,80 +869,80 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
                 dot.icon_size = sp(8)
                 dot.text_color = get_color_from_hex("#7D7D7D")
 
-    def update_graph_volume(self, dict_exo):
-        """
-        MAJ du graphique du volume.
-        """
+    # def update_graph_volume(self, dict_exo):
+    #     """
+    #     MAJ du graphique du volume.
+    #     """
 
-        # Annuler MAJ si df_exo vide (exercice vient d'être ajouté)
-        if len(dict_exo) == 0:
-            return
+    #     # Annuler MAJ si df_exo vide (exercice vient d'être ajouté)
+    #     if len(dict_exo) == 0:
+    #         return
 
-        # --- Paramétrage du dataframe ---
-        month = self.app.today.month + 1
-        year = self.app.today.year - 1
-        if month == 13:
-            month = 1
-            year += 1
-        self.start = datetime(year, month, 1)
+    #     # --- Paramétrage du dataframe ---
+    #     month = self.app.today.month + 1
+    #     year = self.app.today.year - 1
+    #     if month == 13:
+    #         month = 1
+    #         year += 1
+    #     self.start = datetime(year, month, 1)
 
-        # Dataframe de l'année dernière
-        last_year_activities = [row for row in dict_exo
-                                if row.get("Date") is not None and row["Date"] >= self.start]
+    #     # Dataframe de l'année dernière
+    #     last_year_activities = [row for row in dict_exo
+    #                             if row.get("Date") is not None and row["Date"] >= self.start]
 
-        # Compter le nombre de séances par mois (format AAAA-MM)
-        activity_counter = Counter()
-        for row in last_year_activities:
-            month_str = row["Date"].strftime("%Y-%m")
-            activity_counter[month_str] += 1
+    #     # Compter le nombre de séances par mois (format AAAA-MM)
+    #     activity_counter = Counter()
+    #     for row in last_year_activities:
+    #         month_str = row["Date"].strftime("%Y-%m")
+    #         activity_counter[month_str] += 1
 
-        # Générer la liste de tous les mois complets
-        months_full = []
-        current = self.start
-        while current <= self.app.today:
-            months_full.append(current.strftime("%Y-%m"))
-            current += relativedelta(months=1)
+    #     # Générer la liste de tous les mois complets
+    #     months_full = []
+    #     current = self.start
+    #     while current <= self.app.today:
+    #         months_full.append(current.strftime("%Y-%m"))
+    #         current += relativedelta(months=1)
 
-        # Créer la liste finale avec tous les mois (0 si pas d'activité)
-        activity_by_month_full = [{"mois": m, "nb_seances": activity_counter.get(m, 0)}
-                                  for m in months_full]
+    #     # Créer la liste finale avec tous les mois (0 si pas d'activité)
+    #     activity_by_month_full = [{"mois": m, "nb_seances": activity_counter.get(m, 0)}
+    #                               for m in months_full]
 
-        # MAJ de la moyenne mensuelle sur la dernière année (Encadré 2 : Statistiques)
-        moy = sum(d["nb_seances"] for d in activity_by_month_full) / len(activity_by_month_full)
-        self.ids.freq_month_moy_value.text = str(round(moy, 2))
+    #     # MAJ de la moyenne mensuelle sur la dernière année (Encadré 2 : Statistiques)
+    #     moy = sum(d["nb_seances"] for d in activity_by_month_full) / len(activity_by_month_full)
+    #     self.ids.freq_month_moy_value.text = str(round(moy, 2))
 
-        # ✅ Conversion en datetime
-        for d in activity_by_month_full:
-            d["mois_dt"] = datetime.strptime(d["mois"], "%Y-%m")
+    #     # ✅ Conversion en datetime
+    #     for d in activity_by_month_full:
+    #         d["mois_dt"] = datetime.strptime(d["mois"], "%Y-%m")
 
 
-        # --- Paramétrages du graphique matplotlib ---
-        # Nettoyer les axes
-        self.volume_ax.clear()
+    #     # --- Paramétrages du graphique matplotlib ---
+    #     # Nettoyer les axes
+    #     self.volume_ax.clear()
 
-        # Extraire les données du dict pour matplotlib
-        x_dates = [d["mois_dt"] for d in activity_by_month_full]
-        y_counts = [d["nb_seances"] for d in activity_by_month_full]
+    #     # Extraire les données du dict pour matplotlib
+    #     x_dates = [d["mois_dt"] for d in activity_by_month_full]
+    #     y_counts = [d["nb_seances"] for d in activity_by_month_full]
 
-        # ✅ Personnalisation des barres
-        self.volume_ax.bar(x_dates, y_counts, width=20, color="lightgreen")
+    #     # ✅ Personnalisation des barres
+    #     self.volume_ax.bar(x_dates, y_counts, width=20, color="lightgreen")
 
-        # Mise en forme
-        self.volume_ax.set_ylabel("Nombre d'activités", color="lightgreen")
-        self.volume_ax.tick_params(axis="y", labelcolor="lightgreen")
-        self.volume_ax.set_title("Evolution mensuelle des activités (1 an)",
-                                 color="white")
+    #     # Mise en forme
+    #     self.volume_ax.set_ylabel("Nombre d'activités", color="lightgreen")
+    #     self.volume_ax.tick_params(axis="y", labelcolor="lightgreen")
+    #     self.volume_ax.set_title("Evolution mensuelle des activités (1 an)",
+    #                              color="white")
 
-        # Axe X avec chaque mois
-        self.volume_ax.xaxis.set_major_locator(mdates.MonthLocator())  # un tick par mois
-        self.volume_ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
-        self.volume_graph.autofmt_xdate()
+    #     # Axe X avec chaque mois
+    #     self.volume_ax.xaxis.set_major_locator(mdates.MonthLocator())  # un tick par mois
+    #     self.volume_ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
+    #     self.volume_graph.autofmt_xdate()
 
-        # Limitation des axes du graphique
-        self.volume_ax.set_ylim(0, max(y_counts) + 1)
+    #     # Limitation des axes du graphique
+    #     self.volume_ax.set_ylim(0, max(y_counts) + 1)
 
-        # Redessiner matplotlib
-        self.volume_graph.canvas.draw_idle()
+    #     # Redessiner matplotlib
+    #     self.volume_graph.canvas.draw_idle()
 
     # def update_graph_perf(self, dict_exo):
     #     """
