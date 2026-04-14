@@ -67,9 +67,9 @@
 					orientation: "vertical"
 					size_hint: 0.9, None
 					pos_hint: {"center_x": 0.5}
-					height : 0
-					opacity: 0 # invisible
-					disabled: True
+					opacity: 1 if app.selected_exercise else 0 # invisible tant que pas de données
+					disabled: False if app.selected_exercise else True 
+					height: self.minimum_height if app.selected_exercise else 0
 					
 					# --- Bouton ---
 					MDFlatButton:
@@ -81,7 +81,7 @@
 						size_hint:(1, None)
 						halign: "right"
 						_no_ripple_effect: True
-						on_release: app.history.open_history(self)
+						on_release: root.open_history()
 			
 			MDBoxLayout:
                 orientation: "vertical"
@@ -205,3 +205,24 @@
 					id: perf_graph_widget
 					size_hint: (1, None)
 					height: dp(300)
+			
+			MDBoxLayout:
+				orientation: "vertical"
+				size_hint_y: None
+				height: "80dp"
+				padding: "10dp"
+
+				MDLabel:
+					id: selected_date
+					text: "Date : -"
+					halign: "center"
+
+				MDLabel:
+					id: selected_perf
+					text: "Perf : -"
+					halign: "center"
+
+				MDLabel:
+					id: selected_details
+					text: ""
+					halign: "center"

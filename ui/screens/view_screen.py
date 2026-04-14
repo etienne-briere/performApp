@@ -65,6 +65,10 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         app.bind(selected_period=self.update_period_label)
         app.bind(time_offset=self.update_period_label)
 
+        # 🔥 écouter les touches sur le graphique de performance
+        self.ids.perf_graph_widget.bind(on_touch_down=self.on_graph_touch)
+        self.ids.perf_graph_widget.bind(on_touch_move=self.on_graph_touch)
+
         self.update_period_label()
 
         # 🔥 charger l'état actuel (important)
@@ -138,7 +142,14 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         self.ids.perf_graph_widget.touch_mode = None
     
     
+    def open_history(self):
+        app = App.get_running_app()
 
+        if app.exercise_history:
+            app.sm.current = "history"
+        else:
+            toast("Aucune donnée")
+            
     def select_exercise(self, name):
         """
         Modifier les widgets quand l'exercice est sélectionné.
@@ -364,6 +375,64 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         # --- REFRESH ---
         self.volume_graph.canvas.draw_idle()
 
+    def on_graph_touch(self, widget, touch):
+
+        if not self.points_data:
+            return
+
+        inv = self.ax1_perf.transData.inverted()
+        xdata, _ = inv.transform((touch.x, touch.y))
+
+        # Trouver le point le plus proche en X seulement
+        min_dist = float("inf")
+        closest = None
+
+        for p in self.points_data:
+            px = mdates.date2num(p["date"])
+            dist = abs(px - xdata)
+
+            if dist < min_dist:
+                min_dist = dist
+                closest = p
+
+        if closest:
+            px = mdates.date2num(closest["date"])
+
+            # --- Ligne verticale ---
+            self.vertical_line.set_xdata([px, px])
+            self.vertical_line.set_visible(True)
+
+            # --- MAJ UI ---
+            self.ids.selected_date.text = f"Date : {closest['date'].strftime('%d %b %Y')}"
+            self.ids.selected_perf.text = f"Poids : {closest['weight']} kg | Reps : {closest['reps']}"
+
+            # détails sets
+            sets_str = " | ".join([f"{s['r']}" for s in closest["sets"]])
+            self.ids.selected_details.text = sets_str
+
+            if hasattr(self, "selected_dot"):
+                self.selected_dot.remove()
+
+            # self.selected_dot = self.ax1_perf.scatter(
+            #     [closest["date"]],
+            #     [closest["weight"]],
+            #     s=120,
+            #     color="white",
+            #     zorder=11
+            # )
+            
+            # Ajouter un halo autour du point sélectionné
+            self.selected_dot = self.ax1_perf.scatter(
+                [closest["date"]],
+                [closest["weight"]],
+                s=300,
+                color="skyblue",
+                alpha=0.2,
+                zorder=9
+            )
+
+        self.perf_graph.canvas.draw_idle()
+
     def update_graph_perf(self, history):
         """
         Met à jour le graphique des performances en fonction de l'historique filtré.
@@ -406,12 +475,31 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
             total_reps.append(reps)
 
         # --- PLOT AXE 1 (poids soulevés) ---
-        self.ax1_perf.plot(dates, weights, marker='o', color="skyblue", label="Poids (kg)")
-        self.ax1_perf.fill_between(dates, weights, color="skyblue", alpha=0.2)
+        # self.ax1_perf.plot(dates, weights, marker='o', color="skyblue", label="Poids (kg)")
+        # self.ax1_perf.fill_between(dates, weights, color="skyblue", alpha=0.2)
+        # self.ax1_perf.set_xlim(min(dates), max(dates))
+        self.ax1_perf.plot(dates, weights, color="skyblue", zorder=2) # ligne
+        self.ax1_perf.fill_between(dates, weights, color="skyblue", alpha=0.2, zorder=1) # zone sous la ligne
+        self.ax1_perf.scatter(dates, weights, marker='o', color="skyblue", zorder=5) # points au-dessus de la ligne
+        self.ax1_perf.set_xlim(min(dates), max(dates)) # limites de l'axe des X pour éviter que les points soient coupés
 
         # --- PLOT AXE 2 (répétitions) ---
-        self.ax2_perf.plot(dates, total_reps, marker='x', linestyle='--', color="orange", label="Reps")
-        self.ax2_perf.fill_between(dates, total_reps, color="orange", alpha=0.1)
+        # self.ax2_perf.plot(dates, total_reps, marker='x', linestyle='--', color="orange", label="Reps")
+        # self.ax2_perf.fill_between(dates, total_reps, color="orange", alpha=0.1)
+        self.ax2_perf.plot(dates, total_reps, linestyle='--', color="orange", zorder=2) # ligne
+        self.ax2_perf.fill_between(dates, total_reps, color="orange", alpha=0.1, zorder=1) # zone sous la ligne
+        self.ax2_perf.scatter(dates, total_reps, marker='x', color="orange", zorder=5) # points au-dessus de la ligne
+
+        # --- LIGNE VERTICALE (session sélectionnée) ---
+        self.vertical_line = self.ax1_perf.axvline(
+            x=dates[-1],  # positionnée par défaut sur la dernière session
+            color="white",
+            linestyle="--",
+            alpha=0.5
+        )
+        self.vertical_line.set_visible(True)
+        # Force la ligne verticale au premier plan
+        self.vertical_line.set_zorder(3)
 
         # --- STYLE AXE 1 (poids) ---
         self.ax1_perf.set_ylabel("Poids (kg)", color="skyblue")
@@ -444,6 +532,24 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
 
         # --- REFRESH ---
         self.perf_graph.canvas.draw_idle()
+
+        # --- PRÉPARER LES DONNÉES POUR L'HISTORIQUE DÉTAILLÉ ---
+        self.points_data = []
+
+        for session in history:
+            date = session["date"]
+            sets = session["sets"]
+
+            w = max([s["w"] for s in sets]) if sets else 0
+            reps = sum([s["r"] for s in sets])
+
+            self.points_data.append({
+                "date": date,
+                "weight": w,
+                "reps": reps,
+                "sets": sets,
+                "notes": session.get("notes", "")
+            })
 
 
     def clean_all_exercises(self):
@@ -868,123 +974,3 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
                 dot.icon = "checkbox-blank-circle-outline"
                 dot.icon_size = sp(8)
                 dot.text_color = get_color_from_hex("#7D7D7D")
-
-    # def update_graph_volume(self, dict_exo):
-    #     """
-    #     MAJ du graphique du volume.
-    #     """
-
-    #     # Annuler MAJ si df_exo vide (exercice vient d'être ajouté)
-    #     if len(dict_exo) == 0:
-    #         return
-
-    #     # --- Paramétrage du dataframe ---
-    #     month = self.app.today.month + 1
-    #     year = self.app.today.year - 1
-    #     if month == 13:
-    #         month = 1
-    #         year += 1
-    #     self.start = datetime(year, month, 1)
-
-    #     # Dataframe de l'année dernière
-    #     last_year_activities = [row for row in dict_exo
-    #                             if row.get("Date") is not None and row["Date"] >= self.start]
-
-    #     # Compter le nombre de séances par mois (format AAAA-MM)
-    #     activity_counter = Counter()
-    #     for row in last_year_activities:
-    #         month_str = row["Date"].strftime("%Y-%m")
-    #         activity_counter[month_str] += 1
-
-    #     # Générer la liste de tous les mois complets
-    #     months_full = []
-    #     current = self.start
-    #     while current <= self.app.today:
-    #         months_full.append(current.strftime("%Y-%m"))
-    #         current += relativedelta(months=1)
-
-    #     # Créer la liste finale avec tous les mois (0 si pas d'activité)
-    #     activity_by_month_full = [{"mois": m, "nb_seances": activity_counter.get(m, 0)}
-    #                               for m in months_full]
-
-    #     # MAJ de la moyenne mensuelle sur la dernière année (Encadré 2 : Statistiques)
-    #     moy = sum(d["nb_seances"] for d in activity_by_month_full) / len(activity_by_month_full)
-    #     self.ids.freq_month_moy_value.text = str(round(moy, 2))
-
-    #     # ✅ Conversion en datetime
-    #     for d in activity_by_month_full:
-    #         d["mois_dt"] = datetime.strptime(d["mois"], "%Y-%m")
-
-
-    #     # --- Paramétrages du graphique matplotlib ---
-    #     # Nettoyer les axes
-    #     self.volume_ax.clear()
-
-    #     # Extraire les données du dict pour matplotlib
-    #     x_dates = [d["mois_dt"] for d in activity_by_month_full]
-    #     y_counts = [d["nb_seances"] for d in activity_by_month_full]
-
-    #     # ✅ Personnalisation des barres
-    #     self.volume_ax.bar(x_dates, y_counts, width=20, color="lightgreen")
-
-    #     # Mise en forme
-    #     self.volume_ax.set_ylabel("Nombre d'activités", color="lightgreen")
-    #     self.volume_ax.tick_params(axis="y", labelcolor="lightgreen")
-    #     self.volume_ax.set_title("Evolution mensuelle des activités (1 an)",
-    #                              color="white")
-
-    #     # Axe X avec chaque mois
-    #     self.volume_ax.xaxis.set_major_locator(mdates.MonthLocator())  # un tick par mois
-    #     self.volume_ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
-    #     self.volume_graph.autofmt_xdate()
-
-    #     # Limitation des axes du graphique
-    #     self.volume_ax.set_ylim(0, max(y_counts) + 1)
-
-    #     # Redessiner matplotlib
-    #     self.volume_graph.canvas.draw_idle()
-
-    # def update_graph_perf(self, dict_exo):
-    #     """
-    #     MAJ du graph perfs.
-    #     """
-
-    #     # Annuler MAJ si nouvel exercice
-    #     if len(dict_exo) == 0:
-    #         return
-
-    #     self.ax1_perf.clear()
-
-    #     # Supprime complètement l'axe 2
-    #     self.ax2_perf.remove()
-
-    #     # Recréer l'axe 2
-    #     self.ax2_perf = self.ax1_perf.twinx()
-
-    #     # Préparer les données
-    #     dates = [r["Date"] for r in dict_exo if r.get("Date") is not None]
-    #     kgs = [r.get("Kg", 0) for r in dict_exo if r.get("Date") is not None]
-    #     total_reps = [r.get("Total", 0) for r in dict_exo if r.get("Date") is not None]
-
-    #     # Axe gauche -> Poids soulevé
-    #     self.ax1_perf.plot(dates, kgs, marker="o", color="skyblue", label="Poids (Kg)")
-    #     self.ax1_perf.fill_between(dates, kgs, color="skyblue", alpha=0.2)
-    #     self.ax1_perf.set_ylabel("Poids (Kg)", color="skyblue")
-    #     self.ax1_perf.tick_params(axis="y", labelcolor="skyblue")
-
-    #     # Axe droit -> Total répétitions
-    #     self.ax2_perf.plot(dates, total_reps, marker="s", color="orange", label="Total répétitions")
-    #     self.ax2_perf.fill_between(dates, total_reps, color="orange", alpha=0.2)
-    #     self.ax2_perf.set_ylabel("Total répétitions", color="orange")
-    #     self.ax2_perf.tick_params(axis="y", labelcolor="orange")
-
-    #     # Format de l’axe des X pour les dates : un tick tous les 2 mois
-    #     self.ax1_perf.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
-    #     self.ax1_perf.xaxis.set_major_formatter(mdates.DateFormatter("%b%y"))
-    #     self.perf_graph.autofmt_xdate(rotation=45)
-
-    #     # Limitation de l'axe x (période d'1 an)
-    #     self.ax1_perf.set_xlim(self.start, self.app.today)
-
-    #     # Redessiner matplotlib
-    #     self.perf_graph.canvas.draw_idle()
