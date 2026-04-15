@@ -209,8 +209,8 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
 
         if app.selected_period == "7d":
             delta = timedelta(days=7)
-        elif app.selected_period == "1m":
-            delta = relativedelta(months=1)
+        elif app.selected_period == "4s":
+            delta = relativedelta(weeks=4)
         else:
             delta = relativedelta(years=1)
 
@@ -218,7 +218,7 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         start_date = end_date - delta
 
         # 🔥 format dynamique
-        if app.selected_period == "7d" or app.selected_period == "1m":
+        if app.selected_period == "7d" or app.selected_period == "4s":
             text = f"{start_date.strftime('%d %b')} - {end_date.strftime('%d %b')}"
         
         else:  # 1 an
@@ -237,7 +237,7 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         # Filtrer l'historique en fonction de la période sélectionnée et du décalage temporel
         filtered_history, start_date, end_date = self.filter_history(history)
 
-        self.update_graph_volume(filtered_history)
+        self.update_graph_volume(filtered_history, start_date, end_date)
         self.update_graph_perf(filtered_history, start_date, end_date)
 
 
@@ -252,8 +252,8 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
 
         if app.selected_period == "7d":
             delta = timedelta(days=7)
-        elif app.selected_period == "1m":
-            delta = relativedelta(months=1)
+        elif app.selected_period == "4s":
+            delta = relativedelta(weeks=4)
         else:
             delta = relativedelta(years=1)
 
@@ -263,10 +263,12 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         return [h for h in history if start_date <= h["date"] < end_date], start_date, end_date
 
 
-    def update_graph_volume(self, history):
+    def update_graph_volume(self, history, start_date=None, end_date=None):
 
         # --- RESET ---
         self.volume_ax.clear()
+
+        print("update_graph_volume", start_date, end_date)
 
         if not history:
             self.volume_ax.text(
@@ -290,8 +292,8 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
             if app.selected_period == "7d":
                 key = date.strftime("%Y-%m-%d")
 
-            elif app.selected_period == "1m":
-                key = date.strftime("%Y-%W")
+            elif app.selected_period == "4s":
+                key = date.strftime("%Y-%m-%d") # 
 
             else:
                 key = date.strftime("%Y-%m")
@@ -300,17 +302,31 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
 
         # --- 2. générer toutes les périodes ---
         full_keys = []
-        current = min(session["date"] for session in history)
-        end = max(session["date"] for session in history)
+        # current = min(session["date"] for session in history)
+        # end = max(session["date"] for session in history)
+        now = datetime.now()
+
+        if app.selected_period == "7d":
+            delta = timedelta(days=7)
+
+        elif app.selected_period == "4s":
+            delta = timedelta(weeks=4)
+
+        else :
+            delta = relativedelta(years=1)
+
+        # 🔥 appliquer le décalage
+        end = now - app.time_offset * delta
+        current = end - delta
 
         while current <= end:
             if app.selected_period == "7d":
                 key = current.strftime("%Y-%m-%d")
                 current += timedelta(days=1)
 
-            elif app.selected_period == "1m":
-                key = current.strftime("%Y-%W")
-                current += timedelta(weeks=1)
+            elif app.selected_period == "4s":
+                key = current.strftime("%Y-%m-%d")
+                current += timedelta(days=1)
 
             else:
                 key = current.strftime("%Y-%m")
@@ -328,8 +344,8 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
             if app.selected_period == "7d":
                 dt = datetime.strptime(key, "%Y-%m-%d")
 
-            elif app.selected_period == "1m":
-                dt = datetime.strptime(key + "-1", "%Y-%W-%w")
+            elif app.selected_period == "4s":
+                dt = datetime.strptime(key, "%Y-%m-%d")
 
             else:
                 dt = datetime.strptime(key, "%Y-%m")
@@ -338,33 +354,71 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
 
         # --- 5. moyenne correcte ---
         moy = sum(y_counts) / len(y_counts)
-       
-        # --- PLOT ---
-        self.volume_ax.bar(x_dates, y_counts, width=5, color="lightgreen")
-        self.volume_ax.axhline(moy, linestyle="--", alpha=0.5)
 
         # --- STYLE ---
         self.volume_ax.set_ylabel("Nombre de séances", color="lightgreen")
         self.volume_ax.tick_params(axis="y", labelcolor="lightgreen")
 
-        # --- FORMAT AXE X ---
+        # --- Affichage selon la période sélectionnée ---
         if app.selected_period == "7d":
-            self.volume_ax.xaxis.set_major_locator(mdates.DayLocator())
+
+            # --- PLOT ---
+            self.volume_ax.bar(x_dates, y_counts, width=0.5, color="lightgreen")
+            self.volume_ax.axhline(moy, linestyle="--", alpha=0.5)
+
+            # limiter l'affichage aux dates de la période
+            self.volume_ax.set_xlim(start_date, end_date)
+
+            # Paramétrage des ticks : un tick par jour avec format "01 Jan"
+            self.volume_ax.xaxis.set_major_locator(mdates.DayLocator(interval=1)) # un tick par jour
             self.volume_ax.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
 
-        elif app.selected_period == "1m":
-            self.volume_ax.xaxis.set_major_locator(mdates.WeekdayLocator())
-            self.volume_ax.xaxis.set_major_formatter(mdates.DateFormatter("S%W"))
-        
+            # Autoformat pour éviter le chevauchement des dates
+            self.volume_graph.autofmt_xdate()
+
+        elif app.selected_period == "4s":
+
+            # --- PLOT ---
+            self.volume_ax.bar(x_dates, y_counts, width=0.5, color="lightgreen")
+            self.volume_ax.axhline(moy, linestyle="--", alpha=0.5)
+
+            # limiter l'affichage aux dates de la période
+            self.volume_ax.set_xlim(start_date, end_date)
+
+            # Paramétrage des ticks
+            self.volume_ax.xaxis.set_minor_locator(mdates.DayLocator(interval=1)) # un tick mineur par jour
+            self.volume_ax.xaxis.set_major_locator(mdates.DayLocator(interval=7)) # un tick principal par semaine
+            self.volume_ax.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
+            self.volume_graph.autofmt_xdate()
+            
+            # Style des ticks
+            self.volume_ax.tick_params(axis="x", color="gray", which="minor", length=3)
+            self.volume_ax.tick_params(axis="x", which="major", length=6)
+           
         elif app.selected_period == "all":
-            self.volume_ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+            # --- PLOT ---
+            self.volume_ax.bar(x_dates, y_counts, width=15, color="lightgreen")
+            self.volume_ax.axhline(moy, linestyle="--", alpha=0.5)
+
+            # Paramétrage des ticks
+            self.volume_ax.xaxis.set_minor_locator(mdates.MonthLocator(interval=1)) # un tick mineur par mois
+            self.volume_ax.xaxis.set_major_locator(mdates.MonthLocator(interval=3)) # un tick principal par trimestre
             self.volume_ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
+            self.volume_graph.autofmt_xdate(rotation=90)
+
+            # Style des ticks
+            self.volume_ax.tick_params(axis="x", color="gray", which="minor", length=3)
+            self.volume_ax.tick_params(axis="x", which="major", length=6)
 
         else:  # 1y
-            self.volume_ax.xaxis.set_major_locator(mdates.MonthLocator())
-            self.volume_ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %y"))
+            # --- PLOT ---
+            self.volume_ax.bar(x_dates, y_counts, width=15, color="lightgreen")
+            self.volume_ax.axhline(moy, linestyle="--", alpha=0.5)
 
-        self.volume_graph.autofmt_xdate()
+            # Paramétrage des ticks
+            self.volume_ax.xaxis.set_major_locator(mdates.MonthLocator(interval=1)) # un tick par mois
+            self.volume_ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
+            self.volume_graph.autofmt_xdate(rotation=90)
 
         # --- LIMITE Y ---
         self.volume_ax.set_ylim(0, max(y_counts) + 1)
@@ -495,7 +549,7 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
             self.ax1_perf.xaxis.set_major_locator(mdates.DayLocator(interval=1))
             self.ax1_perf.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
 
-        elif app.selected_period == "1m":
+        elif app.selected_period == "4s":
             self.ax1_perf.set_xlim(start_date, end_date)
             self.ax1_perf.xaxis.set_major_locator(mdates.WeekdayLocator())
             self.ax1_perf.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
