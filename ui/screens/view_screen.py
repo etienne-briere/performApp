@@ -39,8 +39,9 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
     def __init__(self, **kwargs):
         super().__init__(**kwargs) # super() appelle _init_ de la class parent
 
-        self.dict_exo = None
+        # self.dict_exo = None
         # self.menu_name_exercise_item = []
+        self.selected_dot = None
         self.menu_items = []
 
     def on_kv_post(self, base_widget):
@@ -48,7 +49,6 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         Appelé automatiquement quand le kv est chargé
         et que les ids sont disponibles.
         """
-
         self.initialize_graph_volume()
         self.initialize_graph_perf()
     
@@ -235,10 +235,10 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         history = sorted(app.exercise_history, key=lambda x: x["date"])
         
         # Filtrer l'historique en fonction de la période sélectionnée et du décalage temporel
-        filtered_history = self.filter_history(history)
+        filtered_history, start_date, end_date = self.filter_history(history)
 
         self.update_graph_volume(filtered_history)
-        self.update_graph_perf(filtered_history)
+        self.update_graph_perf(filtered_history, start_date, end_date)
 
 
     def filter_history(self, history):
@@ -246,7 +246,7 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         app = App.get_running_app()
 
         if app.selected_period == "all":
-            return history
+            return history, None, None
 
         now = datetime.now()
 
@@ -260,10 +260,7 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         end_date = now - app.time_offset * delta
         start_date = end_date - delta
 
-        return [
-            h for h in history
-            if start_date <= h["date"] < end_date
-        ]
+        return [h for h in history if start_date <= h["date"] < end_date], start_date, end_date
 
 
     def update_graph_volume(self, history):
@@ -410,33 +407,18 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
             sets_str = " | ".join([f"{s['r']}" for s in closest["sets"]])
             self.ids.selected_details.text = sets_str
 
-            if hasattr(self, "selected_dot"):
-                self.selected_dot.remove()
-
-            # self.selected_dot = self.ax1_perf.scatter(
-            #     [closest["date"]],
-            #     [closest["weight"]],
-            #     s=120,
-            #     color="white",
-            #     zorder=11
-            # )
+            # --- Point sélectionné ---
+            if self.selected_dot:
+                self.selected_dot.set_offsets([[px, closest["weight"]]])
             
-            # Ajouter un halo autour du point sélectionné
-            self.selected_dot = self.ax1_perf.scatter(
-                [closest["date"]],
-                [closest["weight"]],
-                s=300,
-                color="skyblue",
-                alpha=0.2,
-                zorder=9
-            )
-
         self.perf_graph.canvas.draw_idle()
 
-    def update_graph_perf(self, history):
+    def update_graph_perf(self, history, start_date=None, end_date=None):
         """
         Met à jour le graphique des performances en fonction de l'historique filtré.
         :param history: liste des sessions d'entraînement (filtrée selon la période)
+        :param start_date: date de début de la période
+        :param end_date: date de fin de la période
         """
 
         # --- RESET GRAPH ---
@@ -474,18 +456,15 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
             reps = sum([s["r"] for s in sets])
             total_reps.append(reps)
 
+        # Ajouter un halo sur le point sélectionné (initialisé hors du plot pour éviter les problèmes de superposition)
+        self.selected_dot = self.ax1_perf.scatter([], [], s=300, color="skyblue", alpha=0.2, zorder=9)
+       
         # --- PLOT AXE 1 (poids soulevés) ---
-        # self.ax1_perf.plot(dates, weights, marker='o', color="skyblue", label="Poids (kg)")
-        # self.ax1_perf.fill_between(dates, weights, color="skyblue", alpha=0.2)
-        # self.ax1_perf.set_xlim(min(dates), max(dates))
         self.ax1_perf.plot(dates, weights, color="skyblue", zorder=2) # ligne
         self.ax1_perf.fill_between(dates, weights, color="skyblue", alpha=0.2, zorder=1) # zone sous la ligne
-        self.ax1_perf.scatter(dates, weights, marker='o', color="skyblue", zorder=5) # points au-dessus de la ligne
-        self.ax1_perf.set_xlim(min(dates), max(dates)) # limites de l'axe des X pour éviter que les points soient coupés
+        self.ax1_perf.scatter(dates, weights, marker='o', color="skyblue", zorder=5) # points au-dessus de la ligne            
 
         # --- PLOT AXE 2 (répétitions) ---
-        # self.ax2_perf.plot(dates, total_reps, marker='x', linestyle='--', color="orange", label="Reps")
-        # self.ax2_perf.fill_between(dates, total_reps, color="orange", alpha=0.1)
         self.ax2_perf.plot(dates, total_reps, linestyle='--', color="orange", zorder=2) # ligne
         self.ax2_perf.fill_between(dates, total_reps, color="orange", alpha=0.1, zorder=1) # zone sous la ligne
         self.ax2_perf.scatter(dates, total_reps, marker='x', color="orange", zorder=5) # points au-dessus de la ligne
@@ -512,10 +491,12 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         # --- STYLE EN FONCTION DE LA PÉRIODE SÉLECTIONNÉE ---
         app = App.get_running_app()
         if app.selected_period == "7d":
-            self.ax1_perf.xaxis.set_major_locator(mdates.DayLocator())
+            self.ax1_perf.set_xlim(start_date, end_date)
+            self.ax1_perf.xaxis.set_major_locator(mdates.DayLocator(interval=1))
             self.ax1_perf.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
 
         elif app.selected_period == "1m":
+            self.ax1_perf.set_xlim(start_date, end_date)
             self.ax1_perf.xaxis.set_major_locator(mdates.WeekdayLocator())
             self.ax1_perf.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
 
