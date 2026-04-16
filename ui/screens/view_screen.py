@@ -20,6 +20,7 @@ from kivy_matplotlib_widget.uix.graph_widget import MatplotFigure
 from datetime import datetime, timedelta, time
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 from collections import Counter
 from dateutil.relativedelta import relativedelta
 
@@ -66,8 +67,8 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         app.bind(time_offset=self.update_period_label)
 
         # 🔥 écouter les touches sur le graphique de performance
-        self.ids.perf_graph_widget.bind(on_touch_down=self.on_graph_touch)
-        self.ids.perf_graph_widget.bind(on_touch_move=self.on_graph_touch)
+        self.ids.perf_graph_widget.bind(on_touch_down=self.on_graph_perf_touch)
+        self.ids.perf_graph_widget.bind(on_touch_move=self.on_graph_perf_touch)
 
         self.update_period_label()
 
@@ -203,22 +204,17 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
             self.update_graph_perf(self.dict_exo)
 
     def update_period_label(self, *args):
-
+        """Met à jour le label de la période sélectionnée (ex: "01 Jan - 31 Jan"). Masqué si "all"."""
         app = App.get_running_app()
-        now = datetime.now()
 
-        if app.selected_period == "7d":
-            delta = timedelta(days=7)
-        elif app.selected_period == "4s":
-            delta = relativedelta(weeks=4)
-        else:
-            delta = relativedelta(years=1)
+        if app.selected_period == "all":
+            self.period_label = "Toutes les données"
+            return
+        
+        start_date, end_date = self.get_time_window()
 
-        end_date = now - app.time_offset * delta
-        start_date = end_date - delta
-
-        # 🔥 format dynamique
-        if app.selected_period == "7d" or app.selected_period == "4s":
+        # Format du label selon la période sélectionnée
+        if app.selected_period in ["7d", "4s"]:
             text = f"{start_date.strftime('%d %b')} - {end_date.strftime('%d %b')}"
         
         else:  # 1 an
@@ -227,9 +223,9 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         self.period_label = text
 
     def update_graphs(self, *args):
+        """Met à jour les graphiques de volume et de performance en fonction de l'historique et de la période sélectionnée."""
 
         app = App.get_running_app()
-        # history = app.exercise_history
 
         # --- TRI PAR DATE CROISSANTE (important pour les graphiques) ---
         history = sorted(app.exercise_history, key=lambda x: x["date"])
@@ -242,45 +238,73 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
 
 
     def filter_history(self, history):
+        """Filtre l'historique en fonction de la période sélectionnée et du décalage temporel."""
 
         app = App.get_running_app()
+        now = datetime.now()
 
         if app.selected_period == "all":
-            return history, None, None
+            start_date = min(session["date"] for session in history) # date de la première session enregistrée
+            end_date = now # date actuelle pour inclure toutes les sessions jusqu'à aujourd'hui
+        else:
+            start_date, end_date = self.get_time_window()
+        print(f"Filtrage de l'historique : {start_date} - {end_date}")
 
+        return [h for h in history if start_date <= h["date"] < end_date], start_date, end_date
+
+    def get_time_window(self):
+        """Calcule la fenêtre temporelle à afficher en fonction de la période sélectionnée et du décalage temporel."""
         now = datetime.now()
+        app = App.get_running_app()
 
         if app.selected_period == "7d":
             delta = timedelta(days=7)
         elif app.selected_period == "4s":
-            delta = relativedelta(weeks=4)
-        else:
+            delta = timedelta(weeks=4)
+        elif app.selected_period == "1y":
             delta = relativedelta(years=1)
 
-        end_date = now - app.time_offset * delta
-        start_date = end_date - delta
+        end = now - app.time_offset * delta
+        start = end - delta
 
-        return [h for h in history if start_date <= h["date"] < end_date], start_date, end_date
+        return start, end
 
-
-    def update_graph_volume(self, history, start_date=None, end_date=None):
+    def update_graph_volume(self, history, start_date, end_date):
+        """Met à jour le graphique du volume (nombre de séances) en fonction de l'historique filtré et de la période sélectionnée."""
+        app = App.get_running_app()
 
         # --- RESET ---
         self.volume_ax.clear()
-
-        print("update_graph_volume", start_date, end_date)
-
+        self.volume_ax.get_yaxis().set_visible(True) # réactiver l'axe Y au cas où il avait été caché par le message "Aucune donnée" lors d'une précédente période sans données
+        self.volume_ax.get_xaxis().set_visible(True)
+        
+        # Si pas de données, afficher "Aucune donnée" au centre du graphique et configurer les ticks selon la période sélectionnée
         if not history:
             self.volume_ax.text(
                 0.5, 0.5, "Aucune donnée",
+                fontsize=16, color="gray",
                 ha="center", va="center",
                 transform=self.volume_ax.transAxes,
-                color="gray"
             )
+            # cacher axe Y
+            self.volume_ax.get_yaxis().set_visible(False)
+            
+            # --- Affichage selon la période sélectionnée ---
+            if app.selected_period == "7d":
+                # limiter l'affichage aux dates de la période
+                self.volume_ax.set_xlim(start_date, end_date)
+                # Paramétrage des ticks : un tick par jour avec format "01 Jan"
+                self.volume_ax.xaxis.set_major_locator(mdates.DayLocator(interval=1)) # un tick par jour
+                self.volume_ax.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
+                # Autoformat pour éviter le chevauchement des dates
+                self.volume_graph.autofmt_xdate()
+            
+            else:  # 1y et 4s
+                # cacher axe X
+                self.volume_ax.get_xaxis().set_visible(False)
+
             self.volume_graph.canvas.draw_idle()
             return
-
-        app = App.get_running_app()
 
         # --- CHOIX DE L’AGRÉGATION ---
         # --- 1. remplir le counter ---
@@ -289,11 +313,8 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         for session in history:
             date = session["date"]
 
-            if app.selected_period == "7d":
+            if app.selected_period in ["7d", "4s"]:
                 key = date.strftime("%Y-%m-%d")
-
-            elif app.selected_period == "4s":
-                key = date.strftime("%Y-%m-%d") # 
 
             else:
                 key = date.strftime("%Y-%m")
@@ -302,33 +323,15 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
 
         # --- 2. générer toutes les périodes ---
         full_keys = []
-        # current = min(session["date"] for session in history)
-        # end = max(session["date"] for session in history)
-        now = datetime.now()
-
-        if app.selected_period == "7d":
-            delta = timedelta(days=7)
-
-        elif app.selected_period == "4s":
-            delta = timedelta(weeks=4)
-
-        else :
-            delta = relativedelta(years=1)
-
-        # 🔥 appliquer le décalage
-        end = now - app.time_offset * delta
-        current = end - delta
-
-        while current <= end:
-            if app.selected_period == "7d":
+        current = start_date
+     
+        while current <= end_date:
+    
+            if app.selected_period in ["7d", "4s"]:
                 key = current.strftime("%Y-%m-%d")
                 current += timedelta(days=1)
 
-            elif app.selected_period == "4s":
-                key = current.strftime("%Y-%m-%d")
-                current += timedelta(days=1)
-
-            else:
+            else:  # 1y ou all
                 key = current.strftime("%Y-%m")
                 current += relativedelta(months=1)
 
@@ -341,10 +344,7 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         x_dates = []
 
         for key in full_keys:
-            if app.selected_period == "7d":
-                dt = datetime.strptime(key, "%Y-%m-%d")
-
-            elif app.selected_period == "4s":
+            if app.selected_period in ["7d", "4s"]:
                 dt = datetime.strptime(key, "%Y-%m-%d")
 
             else:
@@ -355,24 +355,26 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         # --- 5. moyenne correcte ---
         moy = sum(y_counts) / len(y_counts)
 
-        # --- STYLE ---
+        # --- STYLE AXE Y---
         self.volume_ax.set_ylabel("Nombre de séances", color="lightgreen")
         self.volume_ax.tick_params(axis="y", labelcolor="lightgreen")
+        self.volume_ax.yaxis.set_major_locator(ticker.MultipleLocator(1)) # un tick tous les 1 séance
+        self.volume_ax.set_ylim(0, max(y_counts) + 1)
+
+        # Date pure pour éviter les problèmes d'affichage (ex: 31/01/2024 00:00:00 au lieu de 31/01/2024)
+        start_date = start_date.date()
+        end_date = end_date.date()
 
         # --- Affichage selon la période sélectionnée ---
         if app.selected_period == "7d":
-
             # --- PLOT ---
             self.volume_ax.bar(x_dates, y_counts, width=0.5, color="lightgreen")
             self.volume_ax.axhline(moy, linestyle="--", alpha=0.5)
-
             # limiter l'affichage aux dates de la période
             self.volume_ax.set_xlim(start_date, end_date)
-
             # Paramétrage des ticks : un tick par jour avec format "01 Jan"
             self.volume_ax.xaxis.set_major_locator(mdates.DayLocator(interval=1)) # un tick par jour
             self.volume_ax.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
-
             # Autoformat pour éviter le chevauchement des dates
             self.volume_graph.autofmt_xdate()
 
@@ -400,6 +402,9 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
             self.volume_ax.bar(x_dates, y_counts, width=15, color="lightgreen")
             self.volume_ax.axhline(moy, linestyle="--", alpha=0.5)
 
+            # limiter l'affichage aux dates de la période
+            self.volume_ax.set_xlim(start_date, end_date)
+
             # Paramétrage des ticks
             self.volume_ax.xaxis.set_minor_locator(mdates.MonthLocator(interval=1)) # un tick mineur par mois
             self.volume_ax.xaxis.set_major_locator(mdates.MonthLocator(interval=3)) # un tick principal par trimestre
@@ -415,19 +420,19 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
             self.volume_ax.bar(x_dates, y_counts, width=15, color="lightgreen")
             self.volume_ax.axhline(moy, linestyle="--", alpha=0.5)
 
+            # limiter l'affichage aux dates de la période
+            self.volume_ax.set_xlim(start_date, end_date)
+
             # Paramétrage des ticks
             self.volume_ax.xaxis.set_major_locator(mdates.MonthLocator(interval=1)) # un tick par mois
             self.volume_ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
             self.volume_graph.autofmt_xdate(rotation=90)
 
-        # --- LIMITE Y ---
-        self.volume_ax.set_ylim(0, max(y_counts) + 1)
-
         # --- REFRESH ---
         self.volume_graph.canvas.draw_idle()
 
-    def on_graph_touch(self, widget, touch):
-
+    def on_graph_perf_touch(self, widget, touch):
+        """Gère les interactions tactiles sur le graphique de performance pour afficher les détails de la session sélectionnée."""
         if not self.points_data:
             return
 
@@ -467,21 +472,25 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
             
         self.perf_graph.canvas.draw_idle()
 
-    def update_graph_perf(self, history, start_date=None, end_date=None):
+    def update_graph_perf(self, history, start_date, end_date):
         """
         Met à jour le graphique des performances en fonction de l'historique filtré.
         :param history: liste des sessions d'entraînement (filtrée selon la période)
         :param start_date: date de début de la période
         :param end_date: date de fin de la période
         """
+        app = App.get_running_app()
 
         # --- RESET GRAPH ---
         self.ax1_perf.clear()
+        self.ax1_perf.get_yaxis().set_visible(True) # réactiver l'axe Y au cas où il avait été caché par le message "Aucune donnée" lors d'une précédente période sans données
+        self.ax1_perf.get_xaxis().set_visible(True)
 
         # Supprimer et récréer l'axe 2 pour éviter les problèmes de superposition
         self.ax2_perf.remove()
         self.ax2_perf = self.ax1_perf.twinx()
 
+        # Si pas de données, afficher "Aucune donnée" au centre du graphique et configurer les ticks selon la période sélectionnée
         if not history:
             self.ax1_perf.text(
                 0.5, 0.5, "Aucune donnée",
@@ -489,6 +498,21 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
                 ha="center", va="center",
                 transform=self.ax1_perf.transAxes
             )
+
+            # Cacher les axesY (poids et reps)
+            self.ax1_perf.get_yaxis().set_visible(False)
+            
+            # Affichage selon la période sélectionnée
+            if app.selected_period == "7d":
+                self.ax1_perf.set_xlim(start_date, end_date)
+                self.ax1_perf.xaxis.set_major_locator(mdates.DayLocator(interval=1))
+                self.ax1_perf.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
+                self.perf_graph.autofmt_xdate()
+
+            else:  # 1y et 4s
+                # cacher axe X
+                self.ax1_perf.get_xaxis().set_visible(False)
+
             self.perf_graph.canvas.draw_idle()
             return
 
@@ -542,28 +566,46 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         self.ax2_perf.set_ylabel("Total répétitions", color="orange")
         self.ax2_perf.tick_params(axis='y', colors='orange')
 
+        # Date pure pour éviter les problèmes d'affichage (ex: 31/01/2024 00:00:00 au lieu de 31/01/2024)
+        start_date = start_date.date()
+        end_date = end_date.date()
+
         # --- STYLE EN FONCTION DE LA PÉRIODE SÉLECTIONNÉE ---
         app = App.get_running_app()
+
         if app.selected_period == "7d":
             self.ax1_perf.set_xlim(start_date, end_date)
             self.ax1_perf.xaxis.set_major_locator(mdates.DayLocator(interval=1))
             self.ax1_perf.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
+            self.perf_graph.autofmt_xdate()
 
         elif app.selected_period == "4s":
             self.ax1_perf.set_xlim(start_date, end_date)
-            self.ax1_perf.xaxis.set_major_locator(mdates.WeekdayLocator())
+            # Paramétrage des ticks
+            self.ax1_perf.xaxis.set_minor_locator(mdates.DayLocator(interval=1)) # un tick mineur par jour
+            self.ax1_perf.xaxis.set_major_locator(mdates.DayLocator(interval=7)) # un tick principal par semaine
             self.ax1_perf.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
+            self.perf_graph.autofmt_xdate()
+            # Style des ticks
+            self.ax1_perf.tick_params(axis="x", color="gray", which="minor", length=3)
+            self.ax1_perf.tick_params(axis="x", which="major", length=6)
 
         elif app.selected_period == "all":
-            self.ax1_perf.xaxis.set_major_locator(mdates.AutoDateLocator())
+            self.ax1_perf.set_xlim(start_date, end_date)
+            # Paramétrage des ticks
+            self.ax1_perf.xaxis.set_minor_locator(mdates.MonthLocator(interval=1)) # un tick mineur par mois
+            self.ax1_perf.xaxis.set_major_locator(mdates.MonthLocator(interval=3)) # un tick principal par trimestre
             self.ax1_perf.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
-
+            self.perf_graph.autofmt_xdate(rotation=90)
+            # Style des ticks
+            self.ax1_perf.tick_params(axis="x", color="gray", which="minor", length=3)
+            self.ax1_perf.tick_params(axis="x", which="major", length=6)
+        
         else:  # 1y
+            self.ax1_perf.set_xlim(start_date, end_date)
             self.ax1_perf.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
-            self.ax1_perf.xaxis.set_major_formatter(mdates.DateFormatter("%b %y"))
-
-        # Format de l’axe des X pour les dates
-        self.perf_graph.autofmt_xdate(rotation=45)
+            self.ax1_perf.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
+            self.perf_graph.autofmt_xdate(rotation=90)
 
         # --- REFRESH ---
         self.perf_graph.canvas.draw_idle()
