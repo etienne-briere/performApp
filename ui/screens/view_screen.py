@@ -113,7 +113,6 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         # Désactiver les glissements
         self.ids.volume_graph_widget.touch_mode = None
 
-    
     def initialize_graph_perf(self):
         """
         Initialise le graphique des performances.
@@ -551,8 +550,8 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         self.vertical_line = self.ax1_perf.axvline(
             x=dates[-1],  # positionnée par défaut sur la dernière session
             color="white",
-            linestyle="--",
-            alpha=0.5
+            linestyle="-",
+            alpha=0.7,
         )
         self.vertical_line.set_visible(True)
         # Force la ligne verticale au premier plan
