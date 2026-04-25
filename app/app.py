@@ -5,7 +5,7 @@ from kivymd.app import MDApp
 from kivy.lang import Builder
 from kivy.core.window import Window
 from kivy.metrics import dp, sp
-from kivy.properties import StringProperty, ListProperty, NumericProperty
+from kivy.properties import StringProperty, ListProperty, NumericProperty, ObjectProperty
 
 from datetime import datetime, timedelta, time
 
@@ -33,6 +33,7 @@ class PerformApp(MDApp):
     exercise_history = ListProperty([])
     selected_period = StringProperty("1y")  # défaut à 1 an
     time_offset = NumericProperty(0) # décalage temporel (offset = 0 => période actuelle, offset = -2 => 2 périodes en arrière, etc.)
+    selected_session = ObjectProperty(None, allownone=True)
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -119,4 +120,7 @@ class PerformApp(MDApp):
 
         # Réinitialiser le décalage temporel à 0 pour revenir à la période actuelle
         self.time_offset = 0
+    
+    def on_selected_session(self, instance, value):
+        print("Nouvelle session sélectionnée :", value)
        

@@ -4,6 +4,8 @@ from app.data.csv_storage import CsvStorage
 from kivy.app import App
 from kivy.properties import ListProperty
 from kivy.event import EventDispatcher
+from uuid import uuid4
+
 
 class TrainingDataRepository(EventDispatcher):
 
@@ -27,7 +29,11 @@ class TrainingDataRepository(EventDispatcher):
         # Convertir
         convert = DataConverter()
         self.database = convert.from_legacy(raw)
-        print(f"Dictionnaire converti : {self.database}")
+
+        for s in self.database["sessions"]:
+            if "id" not in s:
+                from uuid import uuid4
+                s["id"] = str(uuid4())
 
         # Sauvegarder
         # self.storage.export(self.database)
@@ -62,6 +68,7 @@ class TrainingDataRepository(EventDispatcher):
             for ex in session["exercises"]:
                 if ex["exercise_id"] == exercise_id:
                     history.append({
+                        "id": session.get("id"),
                         "date": date,
                         "sets": ex["sets"],
                         "rpe": ex["rpe"],
@@ -69,6 +76,35 @@ class TrainingDataRepository(EventDispatcher):
                     })
 
         return history
+    
+    def delete_exercise_from_session(self, session_id, exercise_id):
+        """Supprime un exercice spécifique d'une session."""
+        print("SESSION REÇUE =", session_id)
+        print("TYPE =", type(session_id))
+        for s in self.database["sessions"]:
+            # if s["date"] == session["date"]:  # 🔥 clé de matching
+            if s["id"] == session_id:
+                s["exercises"] = [
+                    ex for ex in s["exercises"]
+                    if ex["exercise_id"] != exercise_id
+                ]
+
+                # Si plus aucun exercice → supprimer la session
+                if not s["exercises"]:
+                    self.database["sessions"].remove(s)
+
+                break
+
+        self._refresh_after_update()
+    
+    def _refresh_after_update(self):
+        app = App.get_running_app()
+
+        if app.selected_exercise:
+            app.exercise_history = self.get_exercise_history(
+                app.selected_exercise,
+                self.database
+            )
 
     def on_exercise_names(self, instance, value):
         """on_<property> = réaction automatique à un changement d’état de <property>"""

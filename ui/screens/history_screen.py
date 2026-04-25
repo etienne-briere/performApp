@@ -41,18 +41,6 @@ class HistoryScreen(MDScreen):
 
         self.ids.top_bar.title = f"Historique : {self.exercise_name}"
 
-    # def on_pre_enter(self):
-    #     """
-    #     Exécuter juste avant que l'écran devienne visible
-    #     """
-    #     # Recup des variables
-    #     self.dict_exo = self.app.view.dict_exo
-    #     self.exercise_name = self.app.view.selected_exercise_name
-
-    #     # Modif titre
-    #     self.ids.top_bar.title = f"Historique : {self.exercise_name}"
-
-
     def on_enter(self, *args):
         """ Appelé lorsque on entre dans l'écran. """
         # Gif de chargement activé
@@ -115,49 +103,6 @@ class HistoryScreen(MDScreen):
         ]
 
         Clock.schedule_once(lambda dt: self._create_table(columns, rows))
-    
-    # def _prepare_table_data(self):
-    #     """Cette fonction tourne EN DEHORS du thread UI."""
-    #     print("check 1")
-    #     #  ️Récupération des colonnes à partir du premier élément
-    #     columns_list = list(self.dict_exo[0].keys())
-
-    #     # Supprimer la première colonne
-    #     columns_list = columns_list[1:]
-
-    #     # Préparation des colonnes pour MDDataTable
-    #     columns = []
-    #     for col in columns_list:
-    #         if col == "Etat":
-    #             col_width = dp(20)
-    #         else:
-    #             # longueur max = max(longueur du nom de colonne, des valeurs de la colonne)
-    #             max_len = max(
-    #                 [len(str(col))] +
-    #                 [len(str(row.get(col, ""))) for row in self.dict_exo]
-    #             )
-    #             # 🔹 multiplier par un facteur pour convertir en dp (ajustable)
-    #             col_width = dp(max_len * 3.5)
-
-    #         columns.append((col, col_width))
-
-    #     # Préparer les lignes
-    #     rows = []
-    #     for row_dict in self.dict_exo:
-    #         # On récupère uniquement les colonnes dans l'ordre choisi
-    #         row = [str(row_dict.get(col, "")) for col in columns_list]
-
-    #         # Gestion spéciale de l'icône "Etat"
-    #         if "Etat" in columns_list:
-    #             idx = columns_list.index("Etat")
-    #             icon_name = row[idx]
-    #             color = self.app.record.get_smiley_color(icon_name)
-    #             row[idx] = (icon_name, color, "")
-
-    #         rows.append(tuple(row))
-
-    #     # Une fois fini → ui thread
-    #     Clock.schedule_once(lambda dt: self._create_table(columns, rows))
 
     # ---------------------------------------------------
     #           UI THREAD → création du MDDataTable
@@ -183,25 +128,6 @@ class HistoryScreen(MDScreen):
 
         # Cacher loader
         self.ids.loader_gif.opacity = 0
-
-    # def open_history(self, instance):
-    #     """
-    #     Passe à l'écran de l'historique et affiche le DataFrame complet.
-    #     """
-
-    #     if self.app.view.dict_exo:
-    #         # Changement de l'écran
-    #         self.app.sm.current = "history"
-
-    #     else :
-    #         toast("Aucune activité enregistrée")
-
-    #     # Trouver l'écran parent du bouton
-    #     origin_screen = self.get_parent_screen(instance)
-    #     if origin_screen:
-    #         self.origin_screen_name = origin_screen.name
-    #         print("➡ Écran d’origine :", self.origin_screen_name)
-
 
     def get_parent_screen(self, widget):
         while widget:

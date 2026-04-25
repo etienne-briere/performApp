@@ -13,7 +13,7 @@ from kivymd.uix.button import MDRaisedButton, MDFlatButton, MDIconButton, MDRect
 from kivymd.toast import toast
 from kivy.clock import Clock
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty, ObjectProperty
-
+from kivy.animation import Animation
 
 from kivy_matplotlib_widget.uix.graph_widget import MatplotFigure
 
@@ -150,7 +150,7 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         else:
             toast("Aucune donnée")
             
-    def select_exercise(self, name):
+    # def select_exercise(self, name):
         """
         Modifier les widgets quand l'exercice est sélectionné.
         :param name: Nom de l'exercice
@@ -449,8 +449,10 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
             if dist < min_dist:
                 min_dist = dist
                 closest = p
-
         if closest:
+            app = App.get_running_app()
+            app.selected_session = closest["session"]["id"]
+
             px = mdates.date2num(closest["date"])
 
             # --- Ligne verticale ---
@@ -458,8 +460,7 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
             self.vertical_line.set_visible(True)
 
             # --- MAJ UI ---
-            self.ids.selected_date.text = f"Date : {closest['date'].strftime('%d %b %Y')}"
-            self.ids.selected_perf.text = f"Poids : {closest['weight']} kg | Reps : {closest['reps']}"
+            self.update_selected_session_ui(closest)
 
             # détails sets
             sets_str = " | ".join([f"{s['r']}" for s in closest["sets"]])
@@ -470,6 +471,45 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
                 self.selected_dot.set_offsets([[px, closest["weight"]]])
             
         self.perf_graph.canvas.draw_idle()
+    
+    def update_selected_session_ui(self, session):
+
+        self.ids.selected_date.text = f"{session['date'].strftime('%d %b %Y')}"
+        
+        self.ids.selected_perf.text = (
+            f"{session['weight']} kg • {session['reps']} reps"
+        )
+
+        sets_str = " • ".join(str(s["r"]) for s in session["sets"])
+        self.ids.selected_details.text = f"Séries : {sets_str}"
+    
+    def delete_selected_session(self):
+
+        app = App.get_running_app()
+        session = app.selected_session
+
+        if not session:
+            return
+
+        # supprimer dans la DB
+        exercise_id = app.repo.get_exercise_id(app.selected_exercise, app.repo.database)
+
+        app.repo.delete_exercise_from_session(app.selected_session, exercise_id)
+
+        # reset
+        app.selected_session = None
+
+        # refresh graph
+        self.update_graphs(None, app.exercise_history)
+    
+    def edit_selected_session(self):
+        Animation(opacity=1, d=0.2).start(self.ids.session_card)
+        self.dialog = MDDialog(
+            title="Modifier séance",
+            text="(formulaire ici)",
+            # buttons=[...]
+        )
+        self.dialog.open()
 
     def update_graph_perf(self, history, start_date, end_date):
         """
@@ -613,18 +653,19 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         self.points_data = []
 
         for session in history:
-            date = session["date"]
+            # date = session["date"]
             sets = session["sets"]
 
             w = max([s["w"] for s in sets]) if sets else 0
             reps = sum([s["r"] for s in sets])
 
             self.points_data.append({
-                "date": date,
+                "date": session["date"],
                 "weight": w,
                 "reps": reps,
                 "sets": sets,
-                "notes": session.get("notes", "")
+                "notes": session.get("notes", ""),
+                "session": session
             })
 
 

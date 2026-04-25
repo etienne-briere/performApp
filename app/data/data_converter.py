@@ -1,4 +1,5 @@
 from app.data.csv_storage import CsvStorage
+from uuid import uuid4
 
 class DataConverter:
 
@@ -56,15 +57,24 @@ class DataConverter:
                 # Créer la session si elle n'existe pas encore
                 if date not in sessions_dict:
                     sessions_dict[date] = {
+                        "id": str(uuid4()),  # 🔥 identifiant unique
                         "date": date,
                         "exercises": []
                     }
 
                 # Créer les sets
                 sets = []
-                for k, v in record.items():
-                    if k.startswith("S") and isinstance(v, (int, float)):
-                        sets.append({"r": v, "w": record["Kg"], "tempo":"", "rest": ""})
+                # for k, v in record.items():
+                #     if k.startswith("S") and isinstance(v, (int, float)):
+                #         sets.append({"r": v, "w": record["Kg"], "tempo":"", "rest": ""})
+                for k in sorted(record.keys()):
+                    if k.startswith("S") and isinstance(record[k], (int, float)):
+                        sets.append({
+                            "r": record[k],
+                            "w": record.get("Kg", 0),
+                            "tempo": "",
+                            "rest": ""
+                        })
 
                 # Ajouter l'exercice à la session
                 sessions_dict[date]["exercises"].append({
@@ -80,7 +90,8 @@ class DataConverter:
             key=lambda x: x["date"]
         )
 
-        storage = CsvStorage(folder_path="my_training_data")
-        storage.export(database)
+        # storage = CsvStorage(folder_path="my_training_data")
+        # storage.export(database)
+        print("FIRST SESSION DB:", database["sessions"][0])
     
         return database

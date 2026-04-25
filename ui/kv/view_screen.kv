@@ -206,23 +206,47 @@
 					size_hint: (1, None)
 					height: dp(300)
 			
-			MDBoxLayout:
+			MDCard:
+				id: session_card
 				orientation: "vertical"
 				size_hint_y: None
-				height: "80dp"
-				padding: "10dp"
+				height: self.minimum_height
+				padding: "12dp"
+				spacing: "20dp"
+				elevation: 4
+				radius: [12]
+				opacity: 1 if app.selected_session else 0
+				disabled: False if app.selected_session else True
 
 				MDLabel:
 					id: selected_date
-					text: "Date : -"
-					halign: "center"
+					text: ""
+					theme_text_color: "Primary"
+					font_style: "Subtitle1"
 
 				MDLabel:
 					id: selected_perf
-					text: "Perf : -"
-					halign: "center"
+					text: ""
+					theme_text_color: "Secondary"
 
 				MDLabel:
 					id: selected_details
 					text: ""
-					halign: "center"
+					theme_text_color: "Hint"
+					font_style: "Caption"
+
+				MDBoxLayout:
+					size_hint_y: None
+					height: "40dp"
+					spacing: "10dp"
+
+					MDRaisedButton:
+						text: "Modifier"
+						icon: "pencil"
+						on_release: root.edit_selected_session()
+
+					MDRaisedButton:
+						text: "Supprimer"
+						icon: "delete"
+						md_bg_color: 1, 0, 0, 1
+						on_release: root.delete_selected_session()
