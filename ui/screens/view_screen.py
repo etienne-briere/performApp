@@ -2,7 +2,6 @@ import threading
 
 from kivy.app import App
 from kivy.uix.screenmanager import Screen
-from kivymd.uix.screen import MDScreen
 
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.menu import MDDropdownMenu
@@ -10,6 +9,7 @@ from kivy.metrics import dp, sp
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.textfield import MDTextField
 from kivymd.uix.button import MDRaisedButton, MDFlatButton, MDIconButton, MDRectangleFlatIconButton
+from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.toast import toast
 from kivy.clock import Clock
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty, ObjectProperty
@@ -223,7 +223,6 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
 
     def update_graphs(self, *args):
         """Met à jour les graphiques de volume et de performance en fonction de l'historique et de la période sélectionnée."""
-
         app = App.get_running_app()
 
         # --- TRI PAR DATE CROISSANTE (important pour les graphiques) ---
@@ -470,44 +469,6 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
                 self.selected_dot.set_offsets([[px, closest["weight"]]])
             
         self.perf_graph.canvas.draw_idle()
-    
-    def update_selected_session_ui(self, session):
-
-        self.ids.selected_date.text = f"{session['date'].strftime('%d %b %Y')}"
-        
-        self.ids.selected_perf.text = (
-            f"{session['weight']} kg • {session['reps']} reps"
-        )
-
-        sets_str = " • ".join(str(s["r"]) for s in session["sets"])
-        self.ids.selected_details.text = f"Séries : {sets_str}"
-    
-    def delete_selected_session(self):
-
-        app = App.get_running_app()
-        session_id = app.selected_session
-
-        if not session_id:
-            return
-
-        # supprimer dans la DB
-        exercise_id = app.repo.get_exercise_id(app.selected_exercise, app.repo.database)
-        app.repo.delete_exercise_from_session(app.selected_session, exercise_id)
-
-        # reset
-        app.selected_session = None
-
-        # refresh graph
-        self.update_graphs(None, app.exercise_history)
-    
-    def edit_selected_session(self):
-        Animation(opacity=1, d=0.2).start(self.ids.session_card)
-        self.dialog = MDDialog(
-            title="Modifier séance",
-            text="(formulaire ici)",
-            # buttons=[...]
-        )
-        self.dialog.open()
 
     def update_graph_perf(self, history, start_date, end_date):
         """
@@ -665,6 +626,135 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
                 "notes": session.get("notes", ""),
                 "session": session
             })
+
+    def update_selected_session_ui(self, session):
+
+        self.ids.selected_date.text = f"{session['date'].strftime('%d %b %Y')}"
+        
+        self.ids.selected_perf.text = (
+            f"{session['weight']} kg • {session['reps']} reps"
+        )
+
+        sets_str = " • ".join(str(s["r"]) for s in session["sets"])
+        self.ids.selected_details.text = f"Séries : {sets_str}"
+    
+    def delete_selected_session(self):
+
+        app = App.get_running_app()
+        session_id = app.selected_session
+
+        if not session_id:
+            return
+
+        # supprimer dans la DB
+        exercise_id = app.repo.get_exercise_id(app.selected_exercise, app.repo.database)
+        app.repo.delete_exercise_from_session(app.selected_session, exercise_id)
+
+        # reset
+        app.selected_session = None
+
+        # refresh graph
+        self.update_graphs(None, app.exercise_history)
+    
+    def edit_selected_session(self):
+        app = App.get_running_app()
+
+        session = next(
+            (s for s in app.repo.database["sessions"] if s["id"] == app.selected_session),
+            None
+        )
+
+        if not session:
+            return
+
+        exercise_id = app.repo.get_exercise_id(app.selected_exercise, app.repo.database)
+        ex = app.repo.get_exercise_from_session(session, exercise_id)
+
+        if not ex:
+            print("⚠️ Exercice non trouvé dans la session")
+            return
+
+        # --- Champs ---
+        self.notes_field = MDTextField(
+            text=ex.get("notes", ""),
+            hint_text="Notes",
+            multiline=True
+        )
+
+        self.rpe_field = MDTextField(
+            text=str(ex.get("rpe", "")),
+            hint_text="RPE / Ressenti"
+        )
+
+        # Exemple simple : modifier seulement le poids du 1er set
+        first_set = ex["sets"][0] if ex["sets"] else {"w": 0}
+
+        self.weight_field = MDTextField(
+            text=str(first_set["w"]),
+            hint_text="Poids (kg)",
+            input_filter="float"
+        )
+
+        content = MDBoxLayout(
+            orientation="vertical",
+            spacing="12dp",
+            size_hint_y=None
+        )
+        content.bind(minimum_height=content.setter('height'))
+
+        content.add_widget(self.weight_field)
+        content.add_widget(self.rpe_field)
+        content.add_widget(self.notes_field)
+
+        # --- Dialog ---
+        self.dialog = MDDialog(
+            title="Modifier séance",
+            type="custom",
+            content_cls=content,
+            buttons=[
+                MDFlatButton(
+                    text="ANNULER",
+                    on_release=lambda x: self.dialog.dismiss()
+                ),
+                MDFlatButton(
+                    text="SAUVEGARDER",
+                    on_release=lambda x: self.save_session_edit(session)
+                )
+            ],
+        )
+
+        self.dialog.open()
+    
+    def save_session_edit(self, session):
+        app = App.get_running_app()
+
+        exercise_id = app.repo.get_exercise_id(app.selected_exercise, app.repo.database)
+        ex = app.repo.get_exercise_from_session(session, exercise_id)
+
+        # --- UPDATE DATA ---
+        ex["notes"] = self.notes_field.text
+        ex["rpe"] = self.rpe_field.text
+
+        if ex["sets"]:
+            ex["sets"][0]["w"] = float(self.weight_field.text)
+
+        # --- REFRESH DATA ---
+        if app.selected_exercise:
+            app.exercise_history = app.repo.get_exercise_history(
+                app.selected_exercise,
+                app.repo.database
+            )
+        
+        # 🔥 REFRESH UI
+        self.update_graphs(None, app.exercise_history)
+
+        # --- UI ---
+        self.dialog.dismiss()
+
+
+
+
+
 
 
     def clean_all_exercises(self):

@@ -69,6 +69,12 @@ class TrainingDataRepository(EventDispatcher):
 
         return history
     
+    def get_exercise_from_session(self, session, exercise_id):
+        return next(
+            (e for e in session["exercises"] if e["exercise_id"] == exercise_id),
+            None
+        )
+    
     def delete_exercise_from_session(self, session_id, exercise_id):
         """Supprime un exercice spécifique d'une session."""
         
