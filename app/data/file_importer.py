@@ -28,7 +28,6 @@ class FileImporter:
         # Gestionnaire de données
         self.repo = repo
 
-
     def read_excel(self,file_path) -> dict:
         """Lit un .xlsx et retourne un dict brut {sheet_name: [row_dict]}."""
         wb = load_workbook(file_path, data_only=True)
@@ -128,8 +127,6 @@ class FileImporter:
 
         if file_path.startswith("content://"):
             file_path = self.copy_uri_to_temp_file(file_path)
-
-        print("Chemin final utilisé :", file_path)
 
         if any(file_path.endswith(ext) for ext in [".xls", ".xlsx", ".csv"]):
             

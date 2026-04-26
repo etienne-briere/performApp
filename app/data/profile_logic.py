@@ -128,18 +128,9 @@ class ProfileController:
             try:
                 # Charger le fichier
                 self.all_exercise_dict = self.load_excel_as_dict(file_path)
-                print(f"Dictionnaire complet importé : {self.all_exercise_dict}")
 
                 database = self.convert_old_db(self.all_exercise_dict)
-                # print(f"Dictionnaire converti : {database}")
-
-                # # Récupérer le nom de la première feuille
-                # first_key = list(self.all_exercise_dict.keys())[0]
-
-                # # Ajouter dans l'onglet [VISUALISATION]
-                # self.app.view.update_exercise_menu_button_text(first_key)
-                # self.app.view.select_exercise(first_key)
-
+            
                 # Alerter l'utilisateur
                 toast("Fichier chargé avec succès !")
 
@@ -148,7 +139,6 @@ class ProfileController:
 
                 # Vérifier la structure
                 print(database.keys())
-                print(f"Dictionnaire converti : {database}")
                 
                 # liste des noms des exercices
                 exercise_names = self.get_exercise_names(database)

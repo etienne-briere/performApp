@@ -4,8 +4,6 @@ from app.data.csv_storage import CsvStorage
 from kivy.app import App
 from kivy.properties import ListProperty
 from kivy.event import EventDispatcher
-from uuid import uuid4
-
 
 class TrainingDataRepository(EventDispatcher):
 
@@ -30,17 +28,11 @@ class TrainingDataRepository(EventDispatcher):
         convert = DataConverter()
         self.database = convert.from_legacy(raw)
 
-        for s in self.database["sessions"]:
-            if "id" not in s:
-                from uuid import uuid4
-                s["id"] = str(uuid4())
-
         # Sauvegarder
         # self.storage.export(self.database)
 
         # Mettre à jour l'état global
         self.exercise_names = self.get_exercise_names(self.database)
-        print(self.exercise_names)
 
     def get_exercise_names(self, database):
         return [ex["name"] for ex in database["exercise_library"].values()]
@@ -79,8 +71,7 @@ class TrainingDataRepository(EventDispatcher):
     
     def delete_exercise_from_session(self, session_id, exercise_id):
         """Supprime un exercice spécifique d'une session."""
-        print("SESSION REÇUE =", session_id)
-        print("TYPE =", type(session_id))
+        
         for s in self.database["sessions"]:
             # if s["date"] == session["date"]:  # 🔥 clé de matching
             if s["id"] == session_id:

@@ -9,6 +9,7 @@ class DataConverter:
             "exercise_library": {id: {name, muscle_group, primary_group, secondary_group, type}},
             "sessions": [
                 {
+                    "id": id,
                     "date": datetime,
                     "exercises": [
                         {
@@ -31,7 +32,7 @@ class DataConverter:
         for i, ex_name in enumerate(old_dict.keys(), start=1):
             exercise_ids[ex_name] = i
 
-            # Ici tu peux personnaliser les infos sur chaque exercice
+            # Personnaliser les infos sur chaque exercice
             # Pour l'instant on met des valeurs par défaut pour muscle_group, primary, secondary, type
             database["exercise_library"][i] = {
                 "name": ex_name,
@@ -64,9 +65,6 @@ class DataConverter:
 
                 # Créer les sets
                 sets = []
-                # for k, v in record.items():
-                #     if k.startswith("S") and isinstance(v, (int, float)):
-                #         sets.append({"r": v, "w": record["Kg"], "tempo":"", "rest": ""})
                 for k in sorted(record.keys()):
                     if k.startswith("S") and isinstance(record[k], (int, float)):
                         sets.append({
@@ -92,6 +90,5 @@ class DataConverter:
 
         # storage = CsvStorage(folder_path="my_training_data")
         # storage.export(database)
-        print("FIRST SESSION DB:", database["sessions"][0])
     
         return database

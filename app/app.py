@@ -33,7 +33,7 @@ class PerformApp(MDApp):
     exercise_history = ListProperty([])
     selected_period = StringProperty("1y")  # défaut à 1 an
     time_offset = NumericProperty(0) # décalage temporel (offset = 0 => période actuelle, offset = -2 => 2 périodes en arrière, etc.)
-    selected_session = ObjectProperty(None, allownone=True)
+    selected_session = ObjectProperty(None, allownone=True) # id session selectionnée dans graph de perf
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -105,15 +105,11 @@ class PerformApp(MDApp):
         if not value:
             return
 
-        print(f"Exercice sélectionné : {value}")
-
         # 🔥 récupérer le repo
         repo = self.repo
 
         # 🔥 mettre à jour l’historique automatiquement
         self.exercise_history = repo.get_exercise_history(value, repo.database)
-
-        print(f"Historique mis à jour : {self.exercise_history}")
     
     def on_selected_period(self, instance, value):
         """Réagit au changement de la période sélectionnée"""
@@ -121,6 +117,6 @@ class PerformApp(MDApp):
         # Réinitialiser le décalage temporel à 0 pour revenir à la période actuelle
         self.time_offset = 0
     
-    def on_selected_session(self, instance, value):
-        print("Nouvelle session sélectionnée :", value)
+    # def on_selected_session(self, instance, value):
+    #     print("Nouvelle session sélectionnée :", value)
        

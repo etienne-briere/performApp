@@ -247,7 +247,6 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
             end_date = now # date actuelle pour inclure toutes les sessions jusqu'à aujourd'hui
         else:
             start_date, end_date = self.get_time_window()
-        print(f"Filtrage de l'historique : {start_date} - {end_date}")
 
         return [h for h in history if start_date <= h["date"] < end_date], start_date, end_date
 
@@ -486,14 +485,13 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
     def delete_selected_session(self):
 
         app = App.get_running_app()
-        session = app.selected_session
+        session_id = app.selected_session
 
-        if not session:
+        if not session_id:
             return
 
         # supprimer dans la DB
         exercise_id = app.repo.get_exercise_id(app.selected_exercise, app.repo.database)
-
         app.repo.delete_exercise_from_session(app.selected_session, exercise_id)
 
         # reset
