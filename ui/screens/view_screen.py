@@ -5,10 +5,12 @@ from kivy.uix.screenmanager import Screen
 
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.menu import MDDropdownMenu
+from kivymd.uix.pickers import MDDatePicker
 from kivy.metrics import dp, sp
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.textfield import MDTextField
 from kivymd.uix.button import MDRaisedButton, MDFlatButton, MDIconButton, MDRectangleFlatIconButton
+from kivymd.uix.label import MDLabel
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.toast import toast
 from kivy.clock import Clock
@@ -26,6 +28,7 @@ from dateutil.relativedelta import relativedelta
 
 from app import app
 from config import SERIE_COUNT, SMILEY_DATA, SMILEY_ICON_SIZE, FONT_SIZE_BUTTON, FONT_SIZE_BUTTON2, FONT_STYLE_SUBTITLE1, FONT_STYLE_SUBTITLE2, ICON_SIZE
+from ui.dialogs.edit_session_dialog import EditSessionDialogContent
 
 class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous les fichiers KV un bloc qui correspond à cette classe
 
@@ -36,6 +39,7 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
     font_style_subtitle2 = StringProperty(FONT_STYLE_SUBTITLE2) # style du texte des titres des encadrés
     icon_size = NumericProperty(ICON_SIZE) # taille des icônes
     period_label = StringProperty("") # label de la période sélectionnée (ex: "01 Jan - 31 Jan")
+    selected_date = StringProperty("")
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs) # super() appelle _init_ de la class parent
@@ -233,7 +237,6 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
 
         self.update_graph_volume(filtered_history, start_date, end_date)
         self.update_graph_perf(filtered_history, start_date, end_date)
-
 
     def filter_history(self, history):
         """Filtre l'historique en fonction de la période sélectionnée et du décalage temporel."""
@@ -460,9 +463,9 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
             # --- MAJ UI ---
             self.update_selected_session_ui(closest)
 
-            # détails sets
-            sets_str = " | ".join([f"{s['r']}" for s in closest["sets"]])
-            self.ids.selected_details.text = sets_str
+            # # détails sets
+            # sets_str = " | ".join([f"{s['r']}" for s in closest["sets"]])
+            # self.ids.selected_details.text = sets_str
 
             # --- Point sélectionné ---
             if self.selected_dot:
@@ -628,15 +631,18 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
             })
 
     def update_selected_session_ui(self, session):
-
-        self.ids.selected_date.text = f"{session['date'].strftime('%d %b %Y')}"
+        
+        # MAJ des labels
+        self.selected_date = f"{session['date'].strftime('%d %b %Y')}"
         
         self.ids.selected_perf.text = (
-            f"{session['weight']} kg • {session['reps']} reps"
+            f"{session['weight']} kg"
         )
 
-        sets_str = " • ".join(str(s["r"]) for s in session["sets"])
-        self.ids.selected_details.text = f"Séries : {sets_str}"
+        sets_str = " | ".join(str(s["r"]) for s in session["sets"])
+        self.ids.selected_details.text = f"{session['reps']} reps • {sets_str}"
+
+        self.ids.selected_notes.text = session.get("notes", "")
     
     def delete_selected_session(self):
 
@@ -671,87 +677,78 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         ex = app.repo.get_exercise_from_session(session, exercise_id)
 
         if not ex:
-            print("⚠️ Exercice non trouvé dans la session")
             return
 
-        # --- Champs ---
-        self.notes_field = MDTextField(
-            text=ex.get("notes", ""),
-            hint_text="Notes",
-            multiline=True
+        # --- Content KV ---
+        content = EditSessionDialogContent(
+            date=session["date"].strftime("%Y-%m-%d")
         )
 
-        self.rpe_field = MDTextField(
-            text=str(ex.get("rpe", "")),
-            hint_text="RPE / Ressenti"
-        )
+        # Pré-remplir
+        content.ids.rpe_field.text = str(ex.get("rpe", ""))
+        content.ids.notes_field.text = ex.get("notes", "")
 
-        # Exemple simple : modifier seulement le poids du 1er set
-        first_set = ex["sets"][0] if ex["sets"] else {"w": 0}
-
-        self.weight_field = MDTextField(
-            text=str(first_set["w"]),
-            hint_text="Poids (kg)",
-            input_filter="float"
-        )
-
-        content = MDBoxLayout(
-            orientation="vertical",
-            spacing="12dp",
-            size_hint_y=None
-        )
-        content.bind(minimum_height=content.setter('height'))
-
-        content.add_widget(self.weight_field)
-        content.add_widget(self.rpe_field)
-        content.add_widget(self.notes_field)
+        for s in ex["sets"]:
+            content.add_set(s["w"], s["r"])
 
         # --- Dialog ---
         self.dialog = MDDialog(
             title="Modifier séance",
             type="custom",
             content_cls=content,
+            radius=[20, 20, 20, 20],
             buttons=[
                 MDFlatButton(
                     text="ANNULER",
                     on_release=lambda x: self.dialog.dismiss()
                 ),
-                MDFlatButton(
+                MDRaisedButton(
                     text="SAUVEGARDER",
-                    on_release=lambda x: self.save_session_edit(session)
+                    on_release=lambda x: self.save_session_edit(content, session)
                 )
             ],
         )
 
         self.dialog.open()
     
-    def save_session_edit(self, session):
-        app = App.get_running_app()
+    def save_session_edit(self, content, session):
+        data = content.get_data()
 
-        exercise_id = app.repo.get_exercise_id(app.selected_exercise, app.repo.database)
-        ex = app.repo.get_exercise_from_session(session, exercise_id)
+        print("📦 Data récupérée :", data)
 
-        # --- UPDATE DATA ---
-        ex["notes"] = self.notes_field.text
-        ex["rpe"] = self.rpe_field.text
+        # 👉 ici tu mets ton update DB
+        # session["date"] = data["date"]
+        # ex["sets"] = data["sets"]
+        # etc.
 
-        if ex["sets"]:
-            ex["sets"][0]["w"] = float(self.weight_field.text)
+        # # --- UPDATE DATA ---
+        # ex["notes"] = self.notes_field.text
+        # ex["rpe"] = self.rpe_field.text
 
-        # --- REFRESH DATA ---
-        if app.selected_exercise:
-            app.exercise_history = app.repo.get_exercise_history(
-                app.selected_exercise,
-                app.repo.database
-            )
+        # if ex["sets"]:
+        #     ex["sets"][0]["w"] = float(self.weight_field.text)
+
+        # # --- REFRESH DATA ---
+        # if app.selected_exercise:
+        #     app.exercise_history = app.repo.get_exercise_history(
+        #         app.selected_exercise,
+        #         app.repo.database
+        #     )
         
-        # 🔥 REFRESH UI
-        self.update_graphs(None, app.exercise_history)
+        # # 🔥 REFRESH UI
+        # self.update_graphs(None, app.exercise_history)
 
         # --- UI ---
         self.dialog.dismiss()
 
+    def open_date_picker(self, *args):
+        date_dialog = MDDatePicker()
+        date_dialog.bind(on_save=self.set_date)
+        date_dialog.open()
 
+    def set_date(self, instance, value, date_range):
+        self.selected_date = str(value)
+        self.date_button.text = self.selected_date
 
 
 

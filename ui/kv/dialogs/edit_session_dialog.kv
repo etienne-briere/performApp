@@ -1,0 +1,73 @@
+<SetRow>:
+    spacing: dp(10)
+    adaptive_height: True
+
+    MDTextField:
+        id: weight
+        hint_text: "Kg"
+        input_filter: "float"
+        size_hint_x: 0.5
+
+    MDTextField:
+        id: reps
+        hint_text: "Reps"
+        input_filter: "int"
+        size_hint_x: 0.5
+
+
+<EditSessionDialogContent>:
+    orientation: "vertical"
+    spacing: dp(15)
+    padding: dp(10)
+    adaptive_height: True
+
+    # --- DATE ---
+    MDLabel:
+        text: "Date"
+        theme_text_color: "Secondary"
+
+    MDRaisedButton:
+        id: date_btn
+        text: root.date
+        on_release: root.open_date_picker()
+
+    # --- SETS ---
+    MDBoxLayout:
+        orientation: "horizontal"
+        adaptive_height: True
+
+        MDLabel:
+            text: "Sets"
+            theme_text_color: "Secondary"
+
+        Widget:
+
+        MDIconButton:
+            icon: "plus"
+            on_release: root.add_set()
+
+    MDBoxLayout:
+        id: sets_container
+        orientation: "vertical"
+        spacing: dp(10)
+        adaptive_height: True
+
+    # --- RPE ---
+    MDLabel:
+        text: "RPE"
+        theme_text_color: "Secondary"
+
+    MDTextField:
+        id: rpe_field
+        hint_text: "Ressenti (1-10)"
+        input_filter: "int"
+
+    # --- NOTES ---
+    MDLabel:
+        text: "Notes"
+        theme_text_color: "Secondary"
+
+    MDTextField:
+        id: notes_field
+        hint_text: "Commentaires"
+        multiline: True

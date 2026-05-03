@@ -62,14 +62,16 @@ class PerformApp(MDApp):
         self.theme_cls.accent_palette = ACCENT_PALETTE
 
         # Charger les fichiers .kv
-        Builder.load_file("ui/kv/view_screen.kv")
-        Builder.load_file("ui/kv/history_screen.kv")
-        Builder.load_file("ui/kv/login_dialog.kv")
-        Builder.load_file("ui/kv/settings_screen.kv")
-        Builder.load_file("ui/kv/record_screen.kv")
-        Builder.load_file("ui/kv/home_screen.kv")
-        Builder.load_file("ui/kv/topbar.kv")
-        Builder.load_file("ui/kv/exercise_dropdown.kv")
+        Builder.load_file("ui/kv/screens/view_screen.kv")
+        Builder.load_file("ui/kv/screens/history_screen.kv")
+        Builder.load_file("ui/kv/dialogs/login_dialog.kv")
+        Builder.load_file("ui/kv/screens/settings_screen.kv")
+        Builder.load_file("ui/kv/screens/record_screen.kv")
+        Builder.load_file("ui/kv/screens/home_screen.kv")
+        Builder.load_file("ui/kv/components/topbar.kv")
+        Builder.load_file("ui/kv/components/exercise_dropdown.kv")
+        Builder.load_file("ui/kv/dialogs/edit_session_dialog.kv")
+
 
         return Builder.load_file("ui/kv/main.kv")
 

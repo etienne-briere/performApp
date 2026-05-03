@@ -205,48 +205,153 @@
 					id: perf_graph_widget
 					size_hint: (1, None)
 					height: dp(300)
-			
+
+			# --- Encadré des détails de la session sélectionnée ---
 			MDCard:
 				id: session_card
 				orientation: "vertical"
-				size_hint_y: None
-				height: self.minimum_height
-				padding: "12dp"
-				spacing: "20dp"
 				elevation: 4
 				radius: [12]
+				padding: dp(10)
+				spacing: dp(15)
+				size_hint: 1, None
+				height: self.minimum_height
 				opacity: 1 if app.selected_session else 0
 				disabled: False if app.selected_session else True
 
-				MDLabel:
-					id: selected_date
-					text: ""
-					theme_text_color: "Primary"
-					font_style: "Subtitle1"
-
-				MDLabel:
-					id: selected_perf
-					text: ""
-					theme_text_color: "Secondary"
-
-				MDLabel:
-					id: selected_details
-					text: ""
-					theme_text_color: "Hint"
-					font_style: "Caption"
-
 				MDBoxLayout:
-					size_hint_y: None
-					height: "40dp"
-					spacing: "10dp"
+					orientation: "horizontal"
+					padding: dp(10)
+					height: dp(30)
+					size_hint: 1, None
 
-					MDRaisedButton:
-						text: "Modifier"
-						icon: "pencil"
-						on_release: root.edit_selected_session()
+					MDBoxLayout:
+						id: row_date
+						orientation: "horizontal"
+						pos_hint: {"center_y": 0.5}
+						spacing: dp(15)
+						size_hint: 0.8, None
 
-					MDRaisedButton:
-						text: "Supprimer"
-						icon: "delete"
-						md_bg_color: 1, 0, 0, 1
-						on_release: root.delete_selected_session()
+						MDIcon:
+							icon: "calendar"
+							font_size: "20sp"
+
+						MDLabel:
+							text: root.selected_date
+							halign: "left"
+							text_color: "gray"
+							font_style: root.font_style_subtitle2
+
+					# --- Contenu pour Edit/Delete ---
+					MDBoxLayout:
+						id: row_icons_buttons
+						orientation: "horizontal"
+						pos_hint: {"center_y": 0.5}
+						spacing: dp(5)
+						size_hint: 0.2, None
+						adaptive_height: True
+
+						Widget: # pour pousser les icônes à droite
+						
+						MDIconButton:
+							icon: "pencil"
+							theme_text_color: "Custom"
+							text_color: "skyblue"
+							on_release: root.edit_selected_session()
+
+						MDIconButton:
+							icon: "delete"
+							theme_text_color: "Custom"
+							text_color: "red"
+							on_release: root.delete_selected_session()
+				
+				MDBoxLayout:
+					id: perf_session_selected
+					orientation: "horizontal"
+					spacing: dp(10)
+					padding: dp(10)
+					size_hint: 1, None
+					height: dp(30)
+					
+					# --- Contenu pour rappel Kg soulevé ---
+					MDBoxLayout:
+						id: row_kg
+						orientation: "horizontal"
+						pos_hint: {"center_y": 0.5}
+						spacing: dp(15)
+						size_hint: 0.3, None
+						height: self.minimum_height
+						
+						MDIcon:
+							id: kg_icon
+							icon: "weight-kilogram"
+							theme_text_color: "Custom"
+							text_color: "skyblue"
+							font_size: "20sp"
+						
+						MDLabel:
+							id: selected_perf
+							text: ""
+							halign: "left"
+							text_color: "gray"
+							font_style: root.font_style_subtitle2
+					
+					# --- Contenu pour rappel répétitions/série ---
+					MDBoxLayout:
+						id: row_reps
+						orientation: "horizontal"
+						pos_hint: {"center_y": 0.5}
+						spacing: dp(15)
+						size_hint: 0.4, None
+						
+						MDIcon:
+							id: reps_icon
+							icon: "layers"
+							theme_text_color: "Custom"
+							text_color: (1, 0.65, 0.2, 1)
+							font_size: "20sp"
+						
+						MDLabel:
+							id: selected_details
+							text: ""
+							halign: "left"
+							text_color: "gray"
+							font_style: root.font_style_subtitle2
+					
+					# --- Contenu pour RPE ---
+					MDBoxLayout:
+						id: row_rpe
+						orientation: "horizontal"
+						pos_hint: {"center_y": 0.5}
+						size_hint: 0.3, None
+						
+						MDIcon:
+							id: rpe_icon
+							icon: "emoticon-neutral-outline"
+							theme_text_color: "Custom"
+							text_color: "gray"
+							font_size: "20sp"
+
+				# --- Contenu pour Notes ---
+				MDBoxLayout:
+					id: row_icons_buttons
+					orientation: "horizontal"
+					pos_hint: {"center_y": 0.5}
+					spacing: dp(15)
+					size_hint: 1, None
+					height: dp(30)
+					
+					MDIcon:
+						icon: "note-edit-outline"
+						theme_text_color: "Custom"
+						text_color: "white"
+						pos_hint: {"center_y": 0.5}
+						font_size: "20sp"
+
+					MDLabel:
+						id: selected_notes
+						text: "..."
+						halign: "left"
+						text_color: "gray"
+						font_style: root.font_style_subtitle2
+									
