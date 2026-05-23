@@ -1,130 +1,32 @@
-# =========================
+# ===== PYTHON =====
+__pycache__/
+*.py[cod]
+*$py.class
 
-# 🐍 Python
+# Extensions compilées
+*.so
 
-# =========================
-
-**pycache**/
-*.pyc
-*.pyo
-*.pyd
-*.pyc.*
-*.py,cover
-.python-version
-
-# =========================
-
-# 📦 Environnements
-
-# =========================
-
-.env
-.venv
-env/
+# ===== ENVIRONNEMENTS VIRTUELS =====
+.venv/
 venv/
-ENV/
-env.bak/
-venv.bak/
+env/
 
-# =========================
-
-# 🧪 Tests / Coverage
-
-# =========================
-
-.pytest_cache/
-.coverage
-coverage.xml
-htmlcov/
-
-# =========================
-
-# 🛠️ Build / Packaging
-
-# =========================
-
-build/
-dist/
-*.egg-info/
-.eggs/
-
-# =========================
-
-# 📱 Kivy / Buildozer / Android
-
-# =========================
-
-.bin/
-.buildozer/
-*.apk
-*.aab
-.android/
-.gradle/
-
-# =========================
-
-# 🧠 VSCode / IDE
-
-# =========================
-
+# ===== VSCODE =====
 .vscode/
-.idea/
-*.swp
-*.swo
 
-# =========================
+# ===== KIVY =====
+.kivy/
 
-# 🧾 Logs
+# ===== BUILDOZER / APK =====
+bin/
+build/
+.gradle/
+.buildozer/
+dist/
 
-# =========================
-
+# ===== LOGS =====
 *.log
 
-# =========================
-
-# 🗃️ OS files
-
-# =========================
-
+# ===== FICHIERS OS =====
 .DS_Store
 Thumbs.db
-
-# =========================
-
-# 🎮 Unity (si projet lié)
-
-# =========================
-
-[Ll]ibrary/
-[Tt]emp/
-[Oo]bj/
-[Bb]uild/
-[Bb]uilds/
-[Ll]ogs/
-UserSettings/
-
-# Garder les fichiers importants Unity
-
-!Assets/
-!ProjectSettings/
-!Packages/
-
-# =========================
-
-# 🔌 Bluetooth / Data temporaires
-
-# =========================
-
-*.csv
-*.tmp
-
-# =========================
-
-# 🔐 Secrets / Config locaux
-
-# =========================
-
-*.env
-*.json
-secrets.json
-config.local.json
