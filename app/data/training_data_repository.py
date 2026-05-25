@@ -5,6 +5,8 @@ from kivy.app import App
 from kivy.properties import ListProperty
 from kivy.event import EventDispatcher
 
+from uuid import uuid4
+
 class TrainingDataRepository(EventDispatcher):
 
     exercise_names = ListProperty([])
@@ -76,13 +78,9 @@ class TrainingDataRepository(EventDispatcher):
         )
     
     def generate_session_id(self):
-        """Génère un nouvel ID unique de session."""
-
-        if not self.database["sessions"]:
-            return 1
-
-        return max(s["id"] for s in self.database["sessions"]) + 1
-    
+        """Génère un ID unique de session (UUID)."""
+        return str(uuid4())
+        
     def create_session(self, date, exercise_id, sets, rpe=None, notes=""):
         """Créer une nouvelle session."""
 
