@@ -42,7 +42,7 @@ class RecordScreen(MDScreen):
         super().__init__(**kwargs) # super() appelle _init_ de la class parent
 
         # --- Initialisation des variables ---
-        self.selected_smiley = None
+        self.selected_rpe = None
         self.smiley_buttons = []
         self.all_exercise_dfs = dict()
         self.series_inputs = [] # stockage des champs des séries
@@ -55,6 +55,21 @@ class RecordScreen(MDScreen):
         # Ajouter 3 séries par défaut
         for i in range(SERIE_COUNT):
             self.add_serie_input()
+        
+        # Créer les boutons de smiley dans l'UI
+        for smiley_data in SMILEY_DATA:
+
+            btn = MDIconButton(
+                icon=smiley_data["icon"],
+                theme_icon_color="Custom",
+                text_color=smiley_data["color"],
+                icon_size=SMILEY_ICON_SIZE,
+                size_hint=(1, None),
+                on_release=lambda inst, rpe=smiley_data["rpe"]: self.on_smiley_select(rpe)
+            )
+
+            self.smiley_buttons.append(btn)
+            self.ids.smiley_layout.add_widget(btn)
 
     def on_pre_enter (self):
         """
@@ -66,25 +81,19 @@ class RecordScreen(MDScreen):
         # Managers
         self.importer = app.importer
 
-        # Créer les boutons de smiley dans l'UI
-        for idx, (icon_name, color) in enumerate(SMILEY_DATA[:-1]): # retirer le dernier élement de la liste
-            btn = MDIconButton(
-                icon=icon_name,
-                theme_icon_color="Custom",
-                text_color=color,
-                size_hint=(0.2, None),
-                icon_size=SMILEY_ICON_SIZE,
-                on_release=lambda inst, i=idx: self.on_smiley_select(i)
-            )
-            # Ajout à la liste
-            self.smiley_buttons.append(btn)
-
-            # Ajout dans [smiley_layout]
-            self.ids.smiley_layout.add_widget(btn)
-
         # Si on vient de la view en mode édition, charger les données de la session à modifier
         if app.edit_mode and app.session_to_edit:
             self.load_session_for_edit(app.session_to_edit)
+    
+    def on_leave(self):
+        """
+        Exécuter quand on quitte l'écran.
+        """
+
+        # Réinitialiser le mode édition
+        app = App.get_running_app()
+        app.edit_mode = False
+        app.session_to_edit = None
     
     def load_session_for_edit(self, session):
         '''Charger les données d'une session existante pour modification.'''
@@ -109,7 +118,8 @@ class RecordScreen(MDScreen):
         self.ids.weight_input.text = str(ex["sets"][0]["w"])
 
         # --- rpe ---
-        # self.on_smiley_select(0)
+        rpe = self.get_rpe_from_smiley(ex.get("rpe", None)) # attention marche seulement si ex["rpe"] contient l'icône du smiley, pas le rpe lui même
+        self.on_smiley_select(rpe)
 
         # --- notes ---
         self.ids.notes_input.text = ex.get("notes", "")
@@ -281,25 +291,39 @@ class RecordScreen(MDScreen):
         self.reset_smiley_btn()
         self.ids.notes_input.text = ""
 
-    def on_smiley_select(self, index):
+    def on_smiley_select(self, rpe_value):
         """
         Met en évidence le smiley sélectionné en le gardant coloré et en grisant les autres.
         :param index: index du smiley cliqué dans la liste smiley_data
         """
-        for i, (btn, (_, color)) in enumerate(zip(self.smiley_buttons, SMILEY_DATA)):
-            if i == index:
-                btn.text_color = color  # garde la couleur
-            else:
-                btn.text_color = (0.6, 0.6, 0.6, 1)  # gray
+       
+        for btn, smiley_data in zip(self.smiley_buttons, SMILEY_DATA):
 
-        self.selected_smiley = SMILEY_DATA[index][0]
+            if smiley_data["rpe"] == rpe_value:
+                btn.text_color = smiley_data["color"]
+            else:
+                btn.text_color = (0.6, 0.6, 0.6, 1)
+
+        self.selected_rpe = rpe_value
 
     def reset_smiley_btn(self):
         """
         Réinitialiser la zone d'état de forme.
         """
-        for i, (btn, (_, color)) in enumerate(zip(self.smiley_buttons, SMILEY_DATA)):
-            btn.text_color = color
+        for btn, smiley_data in zip(self.smiley_buttons, SMILEY_DATA):
+            btn.text_color = smiley_data["color"]
+    
+    def get_smiley_from_rpe(self,rpe):
+        return next(
+            s for s in SMILEY_DATA
+            if s["rpe"] == rpe
+        )
+    
+    def get_rpe_from_smiley(self,smiley):
+        return next(
+            s["rpe"] for s in SMILEY_DATA
+            if s["icon"] == smiley
+        )
 
     def get_smiley_color(self, icon_name):
         for name, color in SMILEY_DATA:
@@ -341,7 +365,7 @@ class RecordScreen(MDScreen):
             "Date": self.date_activity,
             "Kg": float(self.ids.weight_input.text),
             "Total": None,
-            "Etat": self.selected_smiley,
+            "Etat": self.selected_rpe,
             "Notes": self.ids.notes_input.text,
         }
 

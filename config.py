@@ -16,13 +16,40 @@ SERIE_COUNT = 4  # Nombre de séries à afficher par défaut dans l'écran d'enr
 ROW_HISTORY_COUNT = 5  # Nombre de lignes à afficher dans l'historique (pagination)
 
 # Données smileys
+# SMILEY_DATA = [
+#     ("emoticon-dead-outline", (1, 0, 0, 1)),  # Rouge
+#     ("emoticon-sad-outline", (1, 0.4, 0, 1)),  # Orange foncé
+#     ("emoticon-neutral-outline", (1, 0.7, 0, 1)),  # Jaune/orangé
+#     ("emoticon-happy-outline", (0.4, 0.8, 0, 1)),  # Vert clair
+#     ("emoticon-excited-outline", (0, 0.7, 0.2, 1)),  # Vert foncé
+#     ("close-outline", "gray")  # Etat inconnu
+# ]
 SMILEY_DATA = [
-    ("emoticon-dead-outline", (1, 0, 0, 1)),  # Rouge
-    ("emoticon-sad-outline", (1, 0.4, 0, 1)),  # Orange foncé
-    ("emoticon-neutral-outline", (1, 0.7, 0, 1)),  # Jaune/orangé
-    ("emoticon-happy-outline", (0.4, 0.8, 0, 1)),  # Vert clair
-    ("emoticon-excited-outline", (0, 0.7, 0.2, 1)),  # Vert foncé
-    ("close-outline", "gray")  # Etat inconnu
+    {
+        "rpe": 1,
+        "icon": "emoticon-dead-outline",
+        "color": (1, 0, 0, 1)
+    },
+    {
+        "rpe": 2,
+        "icon": "emoticon-sad-outline",
+        "color": (1, 0.4, 0, 1)
+    },
+    {
+        "rpe": 3,
+        "icon": "emoticon-neutral-outline",
+        "color": (1, 0.7, 0, 1)
+    },
+    {
+        "rpe": 4,
+        "icon": "emoticon-happy-outline",
+        "color": (0.4, 0.8, 0, 1)
+    },
+    {
+        "rpe": 5,
+        "icon": "emoticon-excited-outline",
+        "color": (0, 0.7, 0.2, 1)
+    }
 ]
 
 # Adaptation écran

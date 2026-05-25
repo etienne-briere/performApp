@@ -114,6 +114,7 @@ class PerformApp(MDApp):
 
         # 🔥 mettre à jour l’historique automatiquement
         self.exercise_history = repo.get_exercise_history(value, repo.database)
+        print(f"Nouvelle données d'historique pour {value} : {self.exercise_history}")
     
     def on_selected_period(self, instance, value):
         """Réagit au changement de la période sélectionnée"""
