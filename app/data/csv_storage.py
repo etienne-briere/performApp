@@ -126,7 +126,8 @@ class CsvStorage:
         with open(sessions_file, newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                date = datetime.strptime(row["date"], "%Y-%m-%d")
+                # date = datetime.strptime(row["date"], "%Y-%m-%d")
+                date = datetime.datetime.strptime(row["date"], "%Y-%m-%d")
                 ex_name = row["exercise_name"]
                 # Trouver l'exercise_id
                 ex_id = next((eid for eid, ed in database["exercise_library"].items() if ed["name"] == ex_name), None)

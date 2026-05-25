@@ -16,7 +16,7 @@ class TrainingDataRepository(EventDispatcher):
         
         # Managers
         self.importer = app.importer
-        # self.storage = app.storage
+        self.storage = app.storage
         
         # Initialisation de la base de données en mémoire et du stockage
         self.database = {"exercise_library": {}, "sessions": [], "body_weight_history": []}
@@ -75,6 +75,90 @@ class TrainingDataRepository(EventDispatcher):
             None
         )
     
+    def generate_session_id(self):
+        """Génère un nouvel ID unique de session."""
+
+        if not self.database["sessions"]:
+            return 1
+
+        return max(s["id"] for s in self.database["sessions"]) + 1
+    
+    def create_session(self, date, exercise_id, sets, rpe=None, notes=""):
+        """Créer une nouvelle session."""
+
+        new_session = {
+            "id": self.generate_session_id(),
+            "date": date,
+            "exercises": [
+                {
+                    "exercise_id": exercise_id,
+                    "sets": sets,
+                    "rpe": rpe,
+                    "notes": notes
+                }
+            ]
+        }
+
+        self.database["sessions"].append(new_session)
+
+        self._refresh_after_update()
+
+        return new_session
+    
+    def update_session(self,session_id,exercise_id,date,sets,rpe=None,notes=""):
+        """Met à jour un exercice dans une session."""
+
+        session = next(
+            (
+                s for s in self.database["sessions"]
+                if s["id"] == session_id
+            ),
+            None
+        )
+
+        if not session:
+            return False
+
+        # mise à jour date
+        session["date"] = date
+
+        # retrouver exercice
+        ex = self.get_exercise_from_session(
+            session,
+            exercise_id
+        )
+
+        if not ex:
+            return False
+
+        # update exercice
+        ex["sets"] = sets
+        ex["rpe"] = rpe
+        ex["notes"] = notes
+
+        self._refresh_after_update()
+
+        return True
+
+    def save_database(self, folder_path=None):
+        """
+        Sauvegarde vers CSV.
+        """
+
+        try:
+
+            # si on change de dossier dynamiquement
+            if folder_path:
+                self.storage = CsvStorage(folder_path)
+
+            self.storage.export(self.database)
+
+            return True
+
+        except Exception as e:
+            print(f"save_database error: {e}")
+            return False
+        
     def delete_exercise_from_session(self, session_id, exercise_id):
         """Supprime un exercice spécifique d'une session."""
         

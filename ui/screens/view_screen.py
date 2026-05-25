@@ -680,36 +680,7 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
 
         # --- switch screen ---
         app.change_screen("record", "Modifier séance")
-    
-    def save_session_edit(self, content, session):
-        data = content.get_data()
 
-        print("📦 Data récupérée :", data)
-
-        # 👉 ici tu mets ton update DB
-        # session["date"] = data["date"]
-        # ex["sets"] = data["sets"]
-        # etc.
-
-        # # --- UPDATE DATA ---
-        # ex["notes"] = self.notes_field.text
-        # ex["rpe"] = self.rpe_field.text
-
-        # if ex["sets"]:
-        #     ex["sets"][0]["w"] = float(self.weight_field.text)
-
-        # # --- REFRESH DATA ---
-        # if app.selected_exercise:
-        #     app.exercise_history = app.repo.get_exercise_history(
-        #         app.selected_exercise,
-        #         app.repo.database
-        #     )
-        
-        # # 🔥 REFRESH UI
-        # self.update_graphs(None, app.exercise_history)
-
-        # --- UI ---
-        self.dialog.dismiss()
 
     def open_date_picker(self, *args):
         date_dialog = MDDatePicker()

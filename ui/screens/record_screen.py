@@ -112,14 +112,18 @@ class RecordScreen(MDScreen):
 
         # Mise à jour de l'UI avec les données de la session
         # --- date ---
+        self.date_activity = session["date"]
         self.date_activity_str = str(session["date"].date().strftime("%d/%m/%Y"))
 
         # --- poids ---
         self.ids.weight_input.text = str(ex["sets"][0]["w"])
 
         # --- rpe ---
-        rpe = self.get_rpe_from_smiley(ex.get("rpe", None)) # attention marche seulement si ex["rpe"] contient l'icône du smiley, pas le rpe lui même
-        self.on_smiley_select(rpe)
+        if ex.get("rpe", None)!= [1, 2, 3, 4, 5]:
+            rpe = self.get_rpe_from_smiley(ex.get("rpe", None)) # attention marche seulement si ex["rpe"] contient l'icône du smiley, pas le rpe lui même
+            self.on_smiley_select(rpe)
+        else :
+            self.on_smiley_select(ex.get("rpe", None))
 
         # --- notes ---
         self.ids.notes_input.text = ex.get("notes", "")
@@ -343,56 +347,123 @@ class RecordScreen(MDScreen):
         # Lancer le thread de sauvegarde
         threading.Thread(target=self._save_activity, daemon=True).start()
 
-        # MAJ des widgets avec les nouvelles valeurs
-        self.app.view.select_exercise(self.app.view.selected_exercise_name)
+    
+    def _save_activity(self):
 
-        # Retirer le loader
+        app = App.get_running_app()
+
+        # -----------------------------
+        # exercise_id (FIX CRITIQUE)
+        # -----------------------------
+        exercise_id = app.repo.get_exercise_id(
+            app.selected_exercise,
+            app.repo.database
+        )
+
+        # -----------------------------
+        # weight safe
+        # -----------------------------
+        weight = self.ids.weight_input.text.strip()
+        weight = float(weight) if weight else None
+
+        # -----------------------------
+        # sets
+        # -----------------------------
+        sets = []
+
+        for reps_input in self.series_inputs:
+            reps = reps_input.text.strip()
+
+            if reps:
+                sets.append({
+                    "w": weight,
+                    "r": int(reps)
+                })
+
+        # -----------------------------
+        # MODE EDITION
+        # -----------------------------
+        if app.edit_mode:
+
+            app.repo.update_session(
+                session_id=app.session_to_edit["id"],
+                exercise_id=exercise_id,
+                date=self.date_activity,
+                sets=sets,
+                rpe=self.selected_rpe,
+                notes=self.ids.notes_input.text
+            )
+
+        # -----------------------------
+        # MODE CREATION
+        # -----------------------------
+        else:
+
+            app.repo.create_session(
+                date=self.date_activity,
+                exercise_id=exercise_id,
+                sets=sets,
+                rpe=self.selected_rpe,
+                notes=self.ids.notes_input.text
+            )
+
+        # -----------------------------
+        # SAVE
+        # -----------------------------
+        app.repo.save_database()
+
+        # -----------------------------
+        # RESET MODE
+        # -----------------------------
+        app.edit_mode = False
+        app.session_to_edit = None
+
+        # -----------------------------
+        # UI feedback
+        # -----------------------------
+        Clock.schedule_once(self.finish_save_ui)
+    
+    def finish_save_ui(self, dt):
+
         self.ids.loader_gif.opacity = 0
 
-        # Afficher le gif success
-        self.ids.success_gif.restart_animation2()
+        # self.ids.success_gif.opacity = 1
 
-    def _save_activity(self, instance=None):
-        """
-        (Tread) Enregistrer la nouvelle perf dans le dictionnaire.
-        """
+    # def _save_activity(self, instance=None):
+    #     """
+    #     (Tread) Enregistrer la nouvelle perf dans le dictionnaire.
+    #     """
             
-        # Liste des activités enregistrées de l'exercice cible
-        dict_exo = self.app.profile.all_exercise_dict[self.app.view.selected_exercise_name]
+    #     # Liste des activités enregistrées de l'exercice cible
+    #     dict_exo = self.app.profile.all_exercise_dict[self.app.view.selected_exercise_name]
 
-        # --- Nouvelle ligne de données ---
-        new_row = {
-            "Date": self.date_activity,
-            "Kg": float(self.ids.weight_input.text),
-            "Total": None,
-            "Etat": self.selected_rpe,
-            "Notes": self.ids.notes_input.text,
-        }
+    #     # --- Nouvelle ligne de données ---
+    #     new_row = {
+    #         "Date": self.date_activity,
+    #         "Kg": float(self.ids.weight_input.text),
+    #         "Total": None,
+    #         "Etat": self.selected_rpe,
+    #         "Notes": self.ids.notes_input.text,
+    #     }
 
-        # --- Nombre de séries ---
-        nb_serie = len(self.ids.zone_3_record_content.children) - 3
+    #     # --- Nombre de séries ---
+    #     nb_serie = len(self.ids.zone_3_record_content.children) - 3
 
-        # Ajouter dynamiquement les colonnes de séries
-        for i in range(nb_serie):
-            repetitions = float(self.series_inputs[i].text) if self.series_inputs[i].text else None
-            new_row[f"S{i + 1}"] = repetitions
+    #     # Ajouter dynamiquement les colonnes de séries
+    #     for i in range(nb_serie):
+    #         repetitions = float(self.series_inputs[i].text) if self.series_inputs[i].text else None
+    #         new_row[f"S{i + 1}"] = repetitions
 
-        # Vérifier que l'exercice cible existe et est bien une liste
-        if not isinstance(self.app.profile.all_exercise_dict.get(self.app.view.selected_exercise_name), list):
-            self.app.profile.all_exercise_dict[self.app.view.selected_exercise_name] = []
+    #     # Vérifier que l'exercice cible existe et est bien une liste
+    #     if not isinstance(self.app.profile.all_exercise_dict.get(self.app.view.selected_exercise_name), list):
+    #         self.app.profile.all_exercise_dict[self.app.view.selected_exercise_name] = []
 
-        # Ajouter la nouvelle performance
-        dict_exo.append(new_row)
+    #     # Ajouter la nouvelle performance
+    #     dict_exo.append(new_row)
 
-        # Réenregistrer
-        self.app.profile.all_exercise_dict[self.app.view.selected_exercise_name] = dict_exo
+    #     # Réenregistrer
+    #     self.app.profile.all_exercise_dict[self.app.view.selected_exercise_name] = dict_exo
 
-        # 🔥 ENREGISTREMENT SUPABASE
-        PerformanceService.insert_performance(
-            user_id=self.app.profile.user_id,
-            exercise_name=self.app.view.selected_exercise_name,
-            perf_dict=new_row
-        )
 
     def open_file_manager_export(self, *args):
         """
