@@ -665,6 +665,7 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
     def edit_selected_session(self):
         app = App.get_running_app()
 
+        # Récupérer la session sélectionnée
         session = next(
             (s for s in app.repo.database["sessions"] if s["id"] == app.selected_session),
             None
@@ -672,44 +673,13 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
 
         if not session:
             return
+        
+        # --- stocker la session à modifier ---
+        app.edit_mode = True
+        app.session_to_edit = session
 
-        exercise_id = app.repo.get_exercise_id(app.selected_exercise, app.repo.database)
-        ex = app.repo.get_exercise_from_session(session, exercise_id)
-
-        if not ex:
-            return
-
-        # --- Content KV ---
-        content = EditSessionDialogContent(
-            date=session["date"].strftime("%Y-%m-%d")
-        )
-
-        # Pré-remplir
-        content.ids.rpe_field.text = str(ex.get("rpe", ""))
-        content.ids.notes_field.text = ex.get("notes", "")
-
-        for s in ex["sets"]:
-            content.add_set(s["w"], s["r"])
-
-        # --- Dialog ---
-        self.dialog = MDDialog(
-            title="Modifier séance",
-            type="custom",
-            content_cls=content,
-            radius=[20, 20, 20, 20],
-            buttons=[
-                MDFlatButton(
-                    text="ANNULER",
-                    on_release=lambda x: self.dialog.dismiss()
-                ),
-                MDRaisedButton(
-                    text="SAUVEGARDER",
-                    on_release=lambda x: self.save_session_edit(content, session)
-                )
-            ],
-        )
-
-        self.dialog.open()
+        # --- switch screen ---
+        app.change_screen("record", "Modifier séance")
     
     def save_session_edit(self, content, session):
         data = content.get_data()

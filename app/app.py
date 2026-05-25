@@ -5,7 +5,7 @@ from kivymd.app import MDApp
 from kivy.lang import Builder
 from kivy.core.window import Window
 from kivy.metrics import dp, sp
-from kivy.properties import StringProperty, ListProperty, NumericProperty, ObjectProperty
+from kivy.properties import StringProperty, ListProperty, NumericProperty, ObjectProperty, BooleanProperty
 
 from datetime import datetime, timedelta, time
 
@@ -34,6 +34,8 @@ class PerformApp(MDApp):
     selected_period = StringProperty("1y")  # défaut à 1 an
     time_offset = NumericProperty(0) # décalage temporel (offset = 0 => période actuelle, offset = -2 => 2 périodes en arrière, etc.)
     selected_session = ObjectProperty(None, allownone=True) # id session selectionnée dans graph de perf
+    edit_mode = BooleanProperty(False) # indique si on est en mode édition d'une session
+    session_to_edit = ObjectProperty(None, allownone=True) # session à modifier
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

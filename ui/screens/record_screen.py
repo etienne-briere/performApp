@@ -82,6 +82,53 @@ class RecordScreen(MDScreen):
             # Ajout dans [smiley_layout]
             self.ids.smiley_layout.add_widget(btn)
 
+        # Si on vient de la view en mode édition, charger les données de la session à modifier
+        if app.edit_mode and app.session_to_edit:
+            self.load_session_for_edit(app.session_to_edit)
+    
+    def load_session_for_edit(self, session):
+        '''Charger les données d'une session existante pour modification.'''
+
+        app = App.get_running_app()
+
+        exercise_id = app.repo.get_exercise_id(
+            app.selected_exercise,
+            app.repo.database
+        )
+
+        ex = app.repo.get_exercise_from_session(session, exercise_id)
+
+        if not ex:
+            return
+
+        # Mise à jour de l'UI avec les données de la session
+        # --- date ---
+        self.date_activity_str = str(session["date"].date().strftime("%d/%m/%Y"))
+
+        # --- poids ---
+        self.ids.weight_input.text = str(ex["sets"][0]["w"])
+
+        # --- rpe ---
+        # self.on_smiley_select(0)
+
+        # --- notes ---
+        self.ids.notes_input.text = ex.get("notes", "")
+
+        # --- sets ---
+        nb_serie = len(ex["sets"])
+
+        # Ajouter les champs manquants
+        while len(self.series_inputs) < nb_serie:
+            self.add_serie_input()
+
+        # Supprimer les champs en trop
+        while len(self.series_inputs) > nb_serie:
+            self.remove_serie_input()
+
+        # Remplir les reps
+        for i, set_data in enumerate(ex["sets"]):
+            self.series_inputs[i].text = str(set_data["r"])
+
     def show_date_picker(self, instance):
         """
         Ouvre une boîte de Dialog pour la sélection d'une date.
@@ -262,7 +309,7 @@ class RecordScreen(MDScreen):
 
     def save_activity(self, instance=None):
         """
-        Lancer la sauvegarde de la nouvelle perf.
+        Lancer la sauvegarde de la session d'activité.
         :param instance:
         :return:
         """
@@ -285,7 +332,7 @@ class RecordScreen(MDScreen):
         """
         (Tread) Enregistrer la nouvelle perf dans le dictionnaire.
         """
-
+            
         # Liste des activités enregistrées de l'exercice cible
         dict_exo = self.app.profile.all_exercise_dict[self.app.view.selected_exercise_name]
 
