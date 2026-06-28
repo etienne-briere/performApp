@@ -116,14 +116,13 @@ class RecordScreen(MDScreen):
         self.date_activity_str = str(session["date"].date().strftime("%d/%m/%Y"))
 
         # --- poids ---
-        self.ids.weight_input.text = str(ex["sets"][0]["w"])
+        self.ids.weight_input.text = str(ex["sets"][0]["w"]) if ex["sets"] else ""
 
         # --- rpe ---
-        if ex.get("rpe", None)!= [1, 2, 3, 4, 5]:
-            rpe = self.get_rpe_from_smiley(ex.get("rpe", None)) # attention marche seulement si ex["rpe"] contient l'icône du smiley, pas le rpe lui même
-            self.on_smiley_select(rpe)
-        else :
-            self.on_smiley_select(ex.get("rpe", None))
+        rpe_value = ex.get("rpe", None)
+        if isinstance(rpe_value, str):  # ancien format : nom de l'icône du smiley
+            rpe_value = self.get_rpe_from_smiley(rpe_value)
+        self.on_smiley_select(rpe_value)
 
         # --- notes ---
         self.ids.notes_input.text = ex.get("notes", "")
@@ -329,11 +328,15 @@ class RecordScreen(MDScreen):
             if s["icon"] == smiley
         )
 
-    def get_smiley_color(self, icon_name):
-        for name, color in SMILEY_DATA:
-            if name == icon_name:
-                return color
-        # return None  # si non trouvé
+    # CODE MORT (ancienne architecture) : SMILEY_DATA est désormais une liste de dicts
+    # {rpe, icon, color}, donc "for name, color in SMILEY_DATA" plante (ValueError:
+    # too many values to unpack). Seul appelant : update_last_perfs_card, lui-même
+    # uniquement appelé depuis le bloc legacy commenté dans view_screen.py (self.app.profile).
+    # def get_smiley_color(self, icon_name):
+    #     for name, color in SMILEY_DATA:
+    #         if name == icon_name:
+    #             return color
+    #     # return None  # si non trouvé
 
     def save_activity(self, instance=None):
         """
@@ -341,14 +344,84 @@ class RecordScreen(MDScreen):
         :param instance:
         :return:
         """
+        app = App.get_running_app()
+
+        # Capturer edit_mode/session_to_edit tout de suite : on_leave() (déclenché si
+        # l'utilisateur change d'écran avant la fin du thread) les réinitialise, ce qui
+        # ferait basculer _save_activity sur une création au lieu d'une mise à jour.
+        edit_mode = app.edit_mode
+        session_to_edit = app.session_to_edit
+
+        exercise_id = app.repo.get_exercise_id(app.selected_exercise, app.repo.database)
+        exclude_id = session_to_edit["id"] if edit_mode and session_to_edit else None
+
+        conflict_session = app.repo.find_session_by_date_and_exercise(
+            self.date_activity, exercise_id, exclude_id=exclude_id
+        )
+
+        if conflict_session:
+            self.show_duplicate_dialog(conflict_session, edit_mode, session_to_edit)
+            return
+
+        self.start_save_thread(edit_mode, session_to_edit)
+
+    def show_duplicate_dialog(self, conflict_session, edit_mode, session_to_edit):
+        """
+        Affiche un choix à l'utilisateur quand une séance existe déjà à la même date
+        pour le même exercice : écraser l'ancienne ou en créer une nouvelle quand même.
+        """
+        date_str = conflict_session["date"].strftime("%d/%m/%Y")
+
+        self.duplicate_dialog = MDDialog(
+            title="Séance déjà existante",
+            text=f"Une séance pour cet exercice existe déjà le {date_str}. Que veux-tu faire ?",
+            buttons=[
+                MDFlatButton(
+                    text="ANNULER",
+                    on_release=lambda x: self.duplicate_dialog.dismiss()
+                ),
+                MDFlatButton(
+                    text="CRÉER UNE NOUVELLE",
+                    on_release=lambda x: self.resolve_duplicate(False, conflict_session, edit_mode, session_to_edit)
+                ),
+                MDRaisedButton(
+                    text="ÉCRASER L'ANCIENNE",
+                    md_bg_color="red",
+                    on_release=lambda x: self.resolve_duplicate(True, conflict_session, edit_mode, session_to_edit)
+                ),
+            ],
+        )
+        self.duplicate_dialog.open()
+
+    def resolve_duplicate(self, overwrite, conflict_session, edit_mode, session_to_edit):
+        """
+        Applique le choix de l'utilisateur face à une séance en conflit.
+        :param overwrite: True pour écraser la séance en conflit, False pour en créer une nouvelle quand même
+        """
+        self.duplicate_dialog.dismiss()
+
+        if overwrite:
+            app = App.get_running_app()
+
+            # Si on éditait une AUTRE séance que celle en conflit, on la supprime pour
+            # ne pas laisser un doublon résiduel après avoir basculé sur le conflit.
+            if edit_mode and session_to_edit and session_to_edit["id"] != conflict_session["id"]:
+                exercise_id = app.repo.get_exercise_id(app.selected_exercise, app.repo.database)
+                app.repo.delete_exercise_from_session(session_to_edit["id"], exercise_id)
+
+            edit_mode = True
+            session_to_edit = conflict_session
+
+        self.start_save_thread(edit_mode, session_to_edit)
+
+    def start_save_thread(self, edit_mode, session_to_edit):
         # Afficher le loader
         self.ids.loader_gif.opacity = 1
 
         # Lancer le thread de sauvegarde
-        threading.Thread(target=self._save_activity, daemon=True).start()
+        threading.Thread(target=self._save_activity, args=(edit_mode, session_to_edit), daemon=True).start()
 
-    
-    def _save_activity(self):
+    def _save_activity(self, edit_mode, session_to_edit):
 
         app = App.get_running_app()
 
@@ -383,10 +456,10 @@ class RecordScreen(MDScreen):
         # -----------------------------
         # MODE EDITION
         # -----------------------------
-        if app.edit_mode:
+        if edit_mode:
 
             app.repo.update_session(
-                session_id=app.session_to_edit["id"],
+                session_id=session_to_edit["id"],
                 exercise_id=exercise_id,
                 date=self.date_activity,
                 sets=sets,

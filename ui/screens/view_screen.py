@@ -153,58 +153,64 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
             app.sm.current = "history"
         else:
             toast("Aucune donnée")
-            
+
+    # --- CODE MORT (ancienne architecture, basée sur self.app.profile.all_exercise_dict) ---
+    # Ce bloc était resté rattaché au corps de open_history() (le "def select_exercise"
+    # ci-dessous avait été commenté), ce qui faisait planter open_history() à chaque appel
+    # (NameError sur "name" + self.app.profile qui n'existe plus). Conservé en référence,
+    # à réécrire avec app.repo si cette logique de sélection d'exercice doit être reprise.
+    #
     # def select_exercise(self, name):
-        """
-        Modifier les widgets quand l'exercice est sélectionné.
-        :param name: Nom de l'exercice
-        :return:
-        """
-        # Associer nom de l'exo choisi à une variable
-        self.selected_exercise_name = name
-
-        # Fermer le menu si self.menu existe
-        if hasattr(self, "menu"):
-            self.menu.dismiss()
-
-        # Nettoyer les données
-        self.clean_all_exercises()
-
-        # Liste des activités enregistré pour l'exercice (list de dict)
-        self.dict_exo = self.app.profile.all_exercise_dict[self.selected_exercise_name]
-
-        # Réordonner les colonnes
-        self.dict_exo = self.reorder_columns(self.dict_exo)
-
-        # Réenregistrer
-        self.app.profile.all_exercise_dict[self.selected_exercise_name] = self.dict_exo
-
-        # MAJ des widgets de l'écran "record"
-        self.app.record.update_exercise_content(self.selected_exercise_name)
-        self.app.record.update_last_perfs_card(self.dict_exo)
-        self.app.record.reset_inputs()
-
-        # MAJ des widgets de l'écran actuel "view"
-        self.ids.exercise_menu_button.text = self.selected_exercise_name
-        self.ids.exercise_menu_button.line_color = "white"
-
-        # si pas d'activité enregistrée
-        if len(self.dict_exo) == 0:
-            # Retirer les widgets des graphs
-            self.remove_volume_performance_graphs()
-
-        else:
-            # Ajouter les widgets des graphs
-            self.add_volume_performance_graphs()
-
-            # Tableau du résumé
-            self.update_stats_resume(self.dict_exo)
-
-            # Graphique du nombre d'activités par mois sur 1 an
-            self.update_graph_volume(self.dict_exo)
-
-            # Graphique des performances
-            self.update_graph_perf(self.dict_exo)
+    #     """
+    #     Modifier les widgets quand l'exercice est sélectionné.
+    #     :param name: Nom de l'exercice
+    #     :return:
+    #     """
+    #     # Associer nom de l'exo choisi à une variable
+    #     self.selected_exercise_name = name
+    #
+    #     # Fermer le menu si self.menu existe
+    #     if hasattr(self, "menu"):
+    #         self.menu.dismiss()
+    #
+    #     # Nettoyer les données
+    #     self.clean_all_exercises()
+    #
+    #     # Liste des activités enregistré pour l'exercice (list de dict)
+    #     self.dict_exo = self.app.profile.all_exercise_dict[self.selected_exercise_name]
+    #
+    #     # Réordonner les colonnes
+    #     self.dict_exo = self.reorder_columns(self.dict_exo)
+    #
+    #     # Réenregistrer
+    #     self.app.profile.all_exercise_dict[self.selected_exercise_name] = self.dict_exo
+    #
+    #     # MAJ des widgets de l'écran "record"
+    #     self.app.record.update_exercise_content(self.selected_exercise_name)
+    #     self.app.record.update_last_perfs_card(self.dict_exo)
+    #     self.app.record.reset_inputs()
+    #
+    #     # MAJ des widgets de l'écran actuel "view"
+    #     self.ids.exercise_menu_button.text = self.selected_exercise_name
+    #     self.ids.exercise_menu_button.line_color = "white"
+    #
+    #     # si pas d'activité enregistrée
+    #     if len(self.dict_exo) == 0:
+    #         # Retirer les widgets des graphs
+    #         self.remove_volume_performance_graphs()
+    #
+    #     else:
+    #         # Ajouter les widgets des graphs
+    #         self.add_volume_performance_graphs()
+    #
+    #         # Tableau du résumé
+    #         self.update_stats_resume(self.dict_exo)
+    #
+    #         # Graphique du nombre d'activités par mois sur 1 an
+    #         self.update_graph_volume(self.dict_exo)
+    #
+    #         # Graphique des performances
+    #         self.update_graph_perf(self.dict_exo)
 
     def update_period_label(self, *args):
         """Met à jour le label de la période sélectionnée (ex: "01 Jan - 31 Jan"). Masqué si "all"."""
@@ -652,9 +658,48 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
         if not session_id:
             return
 
+        session = next(
+            (s for s in app.repo.database["sessions"] if s["id"] == session_id),
+            None
+        )
+
+        if not session:
+            return
+
+        date_str = session["date"].strftime("%d/%m/%Y")
+
+        self.delete_dialog = MDDialog(
+            title="Supprimer cette séance ?",
+            text=f"La séance du {date_str} pour {app.selected_exercise} sera définitivement supprimée. Cette action est irréversible.",
+            buttons=[
+                MDFlatButton(
+                    text="ANNULER",
+                    on_release=lambda x: self.delete_dialog.dismiss()
+                ),
+                MDRaisedButton(
+                    text="SUPPRIMER",
+                    md_bg_color="red",
+                    on_release=lambda x: self.confirm_delete_selected_session()
+                ),
+            ],
+        )
+        self.delete_dialog.open()
+
+    def confirm_delete_selected_session(self):
+        self.delete_dialog.dismiss()
+
+        app = App.get_running_app()
+        session_id = app.selected_session
+
+        if not session_id:
+            return
+
         # supprimer dans la DB
         exercise_id = app.repo.get_exercise_id(app.selected_exercise, app.repo.database)
-        app.repo.delete_exercise_from_session(app.selected_session, exercise_id)
+        app.repo.delete_exercise_from_session(session_id, exercise_id)
+
+        # persister la suppression dans sessions.csv
+        app.repo.save_database()
 
         # reset
         app.selected_session = None
@@ -742,8 +787,11 @@ class ViewScreen(MDScreen): # Kivy voit cette classe et va chercher dans tous le
                 record["Total"] = sum(record[k] for k in series_keys)
 
                 # --- 4) Etat ---
+                # CODE MORT (ancienne architecture) : SMILEY_DATA est désormais une liste
+                # de dicts à 5 entrées (index 0-4), donc SMILEY_DATA[5][0] est hors limites.
+                # Cette fonction (clean_all_exercises) n'est plus appelée par aucun flux actif.
                 if not record.get("Etat"):
-                    record["Etat"] = SMILEY_DATA[5][0]
+                    pass  # record["Etat"] = SMILEY_DATA[5][0]
 
                 # --- 5) Notes ---
                 if not record.get("Notes"):

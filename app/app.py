@@ -54,9 +54,10 @@ class PerformApp(MDApp):
         logger.info("Construction de l'interface...")
 
         # Initialiser les gestionnaires
+        # (ordre important : TrainingDataRepository lit self.storage à la création)
+        self.storage = CsvStorage(folder_path="my_training_data")
         self.repo = TrainingDataRepository()
         self.importer = FileImporter(repo=self.repo)
-        self.storage = CsvStorage(folder_path="my_training_data")
 
         # Définir le thème de l'application
         self.theme_cls.theme_style = THEME_STYLE

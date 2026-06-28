@@ -80,7 +80,20 @@ class TrainingDataRepository(EventDispatcher):
     def generate_session_id(self):
         """Génère un ID unique de session (UUID)."""
         return str(uuid4())
-        
+
+    def find_session_by_date_and_exercise(self, date, exercise_id, exclude_id=None):
+        """Cherche une séance existante (autre que exclude_id) à la même date pour le même exercice."""
+        target_date = date.date()
+
+        for s in self.database["sessions"]:
+            if exclude_id and s["id"] == exclude_id:
+                continue
+
+            if s["date"].date() == target_date and self.get_exercise_from_session(s, exercise_id):
+                return s
+
+        return None
+
     def create_session(self, date, exercise_id, sets, rpe=None, notes=""):
         """Créer une nouvelle session."""
 
