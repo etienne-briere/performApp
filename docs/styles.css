@@ -8,7 +8,7 @@
   --radius:16px; --tab-h:64px;
 }
 @media (prefers-color-scheme:dark){
-  :root{
+  :root:not([data-theme="light"]){
     --bg:#12161A; --surface:#1A2026; --raise:#232B33; --line:#303A44;
     --ink:#ECEFF2; --ink2:#B4BEC7; --ink3:#8995A1;
     --chalk:#ECEFF2; --on-chalk:#12161A;
@@ -16,6 +16,15 @@
     --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
   }
 }
+:root[data-theme="dark"]{
+    --bg:#12161A; --surface:#1A2026; --raise:#232B33; --line:#303A44;
+    --ink:#ECEFF2; --ink2:#B4BEC7; --ink3:#8995A1;
+    --chalk:#ECEFF2; --on-chalk:#12161A;
+    --ok:#0ca30c; --danger:#ec6b6b; --gold:#fab219;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+  color-scheme:dark;
+}
+:root[data-theme="light"]{color-scheme:light}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);
@@ -182,3 +191,8 @@ html,body{overflow-x:hidden}
 #rest .in.late{color:#fff}
 #rest .in.late .bar{background:rgba(255,255,255,.3)}
 #rest .in.late .bar i{background:#fff}
+
+.seg.theme{margin:6px 0 2px}
+
+svg.chart.freq{height:auto;touch-action:auto}
+.sub b{color:var(--ink)}

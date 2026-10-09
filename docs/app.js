@@ -14,12 +14,19 @@ function load() {
 }
 let db = load();
 let saved = {}; try { saved = JSON.parse(localStorage.getItem(UIKEY) || '{}'); } catch (e) { /* ignore */ }
-const ui = Object.assign({ tab: 'seance', currentId: null, sel: [], colors: {}, metric: 'max_weight', period: '365', pct: false, stepW: 0.5, stepR: 1 }, saved);
+const ui = Object.assign({ tab: 'seance', currentId: null, sel: [], colors: {}, metric: 'max_weight', period: '365', freqPer: 'week', freqScope: 'all', theme: 'auto', pct: false, stepW: 0.5, stepR: 1 }, saved);
 ui.view = null; ui.point = null; ui.newDate = null; ui.rest = null;
 if (ui.currentId && !db.sessions.some(s => s.id === ui.currentId)) ui.currentId = null;
 
 let saveTimer = 0;
-function persistUi() { try { localStorage.setItem(UIKEY, JSON.stringify({ tab: ui.tab, currentId: ui.currentId, sel: ui.sel, colors: ui.colors, metric: ui.metric, period: ui.period, pct: ui.pct, stepW: ui.stepW, stepR: ui.stepR })); } catch (e) { /* ignore */ } }
+function persistUi() { try { localStorage.setItem(UIKEY, JSON.stringify({ tab: ui.tab, currentId: ui.currentId, sel: ui.sel, colors: ui.colors, metric: ui.metric, period: ui.period, freqPer: ui.freqPer, freqScope: ui.freqScope, theme: ui.theme, pct: ui.pct, stepW: ui.stepW, stepR: ui.stepR })); } catch (e) { /* ignore */ } }
+
+function isDark() { return ui.theme === 'dark' || (ui.theme !== 'light' && matchMedia('(prefers-color-scheme:dark)').matches); }
+function applyTheme() {
+  const r = document.documentElement; if (ui.theme === 'light' || ui.theme === 'dark') r.setAttribute('data-theme', ui.theme); else r.removeAttribute('data-theme');
+  const m = document.querySelector('meta[name=theme-color]'); if (m) m.setAttribute('content', isDark() ? '#12161A' : '#F1F4F7');
+}
+applyTheme();
 function save(immediate) {
   db.meta.changes = (db.meta.changes || 0) + 1;
   const run = () => { try { localStorage.setItem(KEY, JSON.stringify(db)); persistUi(); } catch (e) { toast('Enregistrement impossible : espace de stockage plein.'); } };
@@ -187,7 +194,7 @@ function tickRest() {
   $('#rest .t').textContent = mmss(el); $('#rest .bar i').style.width = Math.min(100, el / target * 100) + '%';
   $('#rest .lbl').textContent = el >= target ? 'Prêt' : 'Repos';
   const r = Math.max(0, Math.min(1, (el / target - 0.5) / 0.5)), box = $('#rest .in');   /* 0 jusqu'à mi-repos, puis rouge progressif */
-  box.style.setProperty('--warn', Math.round(r * 100) + '%'); box.classList.toggle('late', r > (matchMedia('(prefers-color-scheme:dark)').matches ? 0.8 : 0.45));
+  box.style.setProperty('--warn', Math.round(r * 100) + '%'); box.classList.toggle('late', r > (isDark() ? 0.8 : 0.45));
 }
 function stopRest() { ui.rest = null; clearInterval(restTimer); $('#rest').style.display = 'none'; }
 
@@ -364,7 +371,41 @@ function viewProgres() {
     <div class="chips" role="group" aria-label="Période">${periods.map(([k, l]) => `<button class="chipb" type="button" data-act="period" data-p="${k}" aria-pressed="${ui.period === k}">${l}</button>`).join('')}${list.length > 1 ? `<button class="chipb" type="button" data-act="pct" aria-pressed="${ui.pct}">En % du départ</button>` : ''}</div>
     <p class="hint">Glisse pour te déplacer, pince pour zoomer, double tape pour revenir. Touche un point pour voir la séance. Un cercle doré marque un record.</p>
     ${detailCard(list)}
+    ${freqCard()}
     ${pts.length ? `<h2>Séances de ${esc(main.ex.name)}</h2><table class="hist"><thead><tr><th>Date</th><th>Séries</th><th>${esc(m.label)}</th></tr></thead><tbody>${rows}</tbody></table>` : ''}`;
+}
+/* ---- régularité : nombre de séances réalisées par semaine / par mois ---- */
+function freqBars() {
+  const per = ui.freqPer, N = 12, now = PA.dayNum(todayStr()), sel = new Set(ui.sel);
+  const days = [...new Set(db.sessions.filter(s => ui.freqScope === 'all' || s.entries.some(e => sel.has(e.exercise_id))).map(s => s.date))];
+  const MOIS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+  const bars = [];
+  if (per === 'week') {
+    const wk = d => Math.floor((d + 3) / 7), cur = wk(now), counts = new Map();   /* semaines du lundi au dimanche */
+    days.forEach(s => { const w = wk(PA.dayNum(s)); counts.set(w, (counts.get(w) || 0) + 1); });
+    for (let w = cur - N + 1; w <= cur; w++) { const start = new Date((w * 7 - 3) * 864e5); bars.push({ n: counts.get(w) || 0, label: `${start.getUTCDate()} ${MOIS[start.getUTCMonth()]}`, current: w === cur }); }
+  } else {
+    const t = new Date(), cur = t.getFullYear() * 12 + t.getMonth(), counts = new Map();
+    days.forEach(s => { const [y, m] = s.split('-').map(Number), k = y * 12 + m - 1; counts.set(k, (counts.get(k) || 0) + 1); });
+    for (let k = cur - N + 1; k <= cur; k++) bars.push({ n: counts.get(k) || 0, label: MOIS[k % 12], current: k === cur });
+  }
+  return bars;
+}
+function freqCard() {
+  const bars = freqBars(), per = ui.freqPer, unit = per === 'week' ? 'semaine' : 'mois', done = bars.filter(b => !b.current), avg = done.length ? done.reduce((a, b) => a + b.n, 0) / done.length : 0;
+  const max = Math.max(4, ...bars.map(b => b.n)), W = 360, H = 150, ml = 26, mb = 24, mt = 10, bw = (W - ml - 6) / bars.length, Y = v => mt + (1 - v / max) * (H - mt - mb);
+  let g = ''; const step = max > 8 ? 4 : max > 4 ? 2 : 1;
+  for (let v = 0; v <= max; v += step) g += `<line class="grid" x1="${ml}" x2="${W - 6}" y1="${Y(v)}" y2="${Y(v)}"/><text class="axis" x="${ml - 6}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`;
+  bars.forEach((b, i) => { const x = ml + i * bw + bw * 0.16, w = bw * 0.68, y = Y(b.n), h = Math.max(b.n ? 3 : 0, H - mb - y);
+    if (b.n) g += `<path d="M${x},${y + h} V${y + 4} Q${x},${y} ${x + 4},${y} H${x + w - 4} Q${x + w},${y} ${x + w},${y + 4} V${y + h} Z" fill="var(--s1)" opacity="${b.current ? 0.55 : 1}"><title>${b.n} séance${b.n > 1 ? 's' : ''} · ${esc(b.label)}</title></path><text class="axis" x="${x + w / 2}" y="${y - 3}" text-anchor="middle" style="fill:var(--ink2);font-weight:700">${b.n}</text>`;
+    if (i % 2 === (bars.length - 1) % 2) g += `<text class="axis" x="${x + w / 2}" y="${H - 7}" text-anchor="middle">${esc(b.label)}</text>`; });
+  const cur = bars[bars.length - 1];
+  return `<h2>Séances réalisées</h2>
+    <p class="sub">Nombre de séances par ${unit}, sur les 12 derniers ${per === 'week' ? 'semaines' : 'mois'}. Ce n'est pas le tonnage (poids × répétitions).</p>
+    <div class="seg" role="group" aria-label="Regroupement">${[['week', 'Par semaine'], ['month', 'Par mois']].map(([k, l]) => `<button type="button" data-act="freq-per" data-v="${k}" aria-pressed="${ui.freqPer === k}">${l}</button>`).join('')}</div>
+    <div class="chips" role="group" aria-label="Séances comptées">${[['all', 'Toutes les séances'], ['sel', 'Exercices affichés']].map(([k, l]) => `<button class="chipb" type="button" data-act="freq-scope" data-v="${k}" aria-pressed="${ui.freqScope === k}">${l}</button>`).join('')}</div>
+    <div class="sub">${per === 'week' ? 'Cette semaine' : 'Ce mois-ci'} : <b>${cur.n}</b> · moyenne ${fmt(+avg.toFixed(1))} par ${unit}</div>
+    <div class="chartwrap"><svg class="chart freq" viewBox="0 0 ${W} ${H}" role="img" aria-label="Séances par ${unit}">${g}</svg></div>`;
 }
 function renderProgres() { $('#app').innerHTML = viewProgres(); drawChart(); bindChart(); }
 
@@ -382,7 +423,7 @@ function viewDonnees() {
       <button class="btn wide" type="button" data-act="import">Importer un fichier</button></div>
       <p class="muted" style="margin:12px 0 0;font-size:14px">L'import accepte le JSON de PerformApp et le CSV de l'ancienne application. Il peut fusionner avec tes données sans créer de doublon.</p></div>
     <div class="panel"><h2>Exercices</h2>${exRows || '<p class="muted">Aucun exercice pour l\'instant. Tu peux en créer depuis l\'onglet Séance.</p>'}</div>
-    <div class="panel"><h2>Réglages</h2><div class="kv"><label for="rest-sel">Repos visé entre deux séries</label><select class="sel" id="rest-sel" data-act="rest-set">${[45, 60, 90, 120, 180, 240].map(v => `<option value="${v}" ${db.settings.rest === v ? 'selected' : ''}>${mmss(v)}</option>`).join('')}</select></div>
+    <div class="panel"><h2>Réglages</h2><div class="kv"><span>Apparence</span></div><div class="seg theme" role="group" aria-label="Apparence">${[['auto', 'Automatique'], ['light', 'Clair'], ['dark', 'Sombre']].map(([k, l]) => `<button type="button" data-act="theme" data-t="${k}" aria-pressed="${ui.theme === k}">${l}</button>`).join('')}</div><div class="kv"><label for="rest-sel">Repos visé entre deux séries</label><select class="sel" id="rest-sel" data-act="rest-set">${[45, 60, 90, 120, 180, 240].map(v => `<option value="${v}" ${db.settings.rest === v ? 'selected' : ''}>${mmss(v)}</option>`).join('')}</select></div>
       <div class="kv"><span>Export pour tableur</span><button class="btn small" type="button" data-act="export-csv">CSV</button></div>
       ${localStorage.getItem(PREVKEY) ? '<div class="kv"><span>Avant le dernier import</span><button class="btn small" type="button" data-act="restore">Restaurer</button></div>' : ''}
       <div class="kv"><span>Tout effacer<br><small class="muted">Supprime les données de cet appareil</small></span><button class="btn small danger" type="button" data-act="wipe">Effacer</button></div></div>
@@ -474,6 +515,9 @@ const actions = {
   'dock-step': el => { if (!dockInput) return; if (dockInput.dataset.f === 'w') ui.stepW = +el.dataset.s; else ui.stepR = +el.dataset.s; persistUi(); dockRefresh(); },
   'toggle-ex': el => { const id = el.dataset.ex; if (ui.sel.includes(id)) { if (ui.sel.length === 1) { toast('Garde au moins un exercice.'); return; } ui.sel = ui.sel.filter(x => x !== id); } else { if (ui.sel.length >= 4) { toast('4 exercices au maximum.'); return; } ui.sel.push(id); delete ui.colors[id]; } ui.view = null; ui.point = null; persistUi(); renderProgres(); },
   metric: el => { ui.metric = el.dataset.m; ui.point = null; persistUi(); renderProgres(); },
+  'freq-per': el => { ui.freqPer = el.dataset.v; persistUi(); renderProgres(); },
+  'freq-scope': el => { ui.freqScope = el.dataset.v; persistUi(); renderProgres(); },
+  theme: el => { ui.theme = el.dataset.t; persistUi(); applyTheme(); render(); },
   period: el => { ui.period = el.dataset.p; ui.view = null; persistUi(); renderProgres(); },
   pct: () => { ui.pct = !ui.pct; ui.view = null; persistUi(); renderProgres(); },
   'pick-row': el => { ui.point = { ex: ui.sel[0], sid: el.dataset.sid }; renderProgres(); const d = $('#detail'); if (d) d.scrollIntoView({ block: 'center', behavior: 'smooth' }); },

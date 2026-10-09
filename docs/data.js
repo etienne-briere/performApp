@@ -59,7 +59,7 @@
   const METRICS = {
     max_weight: { label: 'Poids max', long: 'Poids maximal soulevé', unit: 'kg', fn: S => Math.max(0, ...S.map(s => s.w || 0)) },
     total_reps: { label: 'Reps', long: 'Total de répétitions', unit: 'reps', fn: S => S.reduce((a, s) => a + s.r, 0) },
-    volume:     { label: 'Volume', long: 'Volume (poids × répétitions)', unit: 'kg', fn: S => S.reduce((a, s) => a + (s.w || 0) * s.r, 0) },
+    volume:     { label: 'Tonnage', long: 'Tonnage (poids × répétitions)', unit: 'kg', fn: S => S.reduce((a, s) => a + (s.w || 0) * s.r, 0) },
     e1rm:       { label: '1RM est.', long: '1RM estimé (Epley)', unit: 'kg', fn: S => Math.max(0, ...S.map(s => (s.w || 0) * (1 + s.r / 30))) }
   };
   const metricOf = (sets, m) => { const S = doneSets(sets); return S.length ? METRICS[m].fn(S) : null; };
@@ -75,7 +75,7 @@
     }
     pts.sort((a, b) => a.x - b.x);
     let best = -Infinity;
-    for (const p of pts) { p.record = pts.length > 1 && p.v > best; best = Math.max(best, p.v); }
+    for (const p of pts) { p.record = best !== -Infinity && p.v > best; best = Math.max(best, p.v); }
     return pts;
   }
 
