@@ -186,6 +186,8 @@ function tickRest() {
   const el = (Date.now() - ui.rest.t0) / 1000, target = db.settings.rest || 90;
   $('#rest .t').textContent = mmss(el); $('#rest .bar i').style.width = Math.min(100, el / target * 100) + '%';
   $('#rest .lbl').textContent = el >= target ? 'Prêt' : 'Repos';
+  const r = Math.max(0, Math.min(1, (el / target - 0.5) / 0.5)), box = $('#rest .in');   /* 0 jusqu'à mi-repos, puis rouge progressif */
+  box.style.setProperty('--warn', Math.round(r * 100) + '%'); box.classList.toggle('late', r > (matchMedia('(prefers-color-scheme:dark)').matches ? 0.8 : 0.45));
 }
 function stopRest() { ui.rest = null; clearInterval(restTimer); $('#rest').style.display = 'none'; }
 

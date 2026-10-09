@@ -176,3 +176,9 @@ select.sel{height:44px;border-radius:12px;border:1.5px solid var(--line);backgro
 .kv>span:first-child,.kv>label{min-width:0;flex:1 1 150px;overflow-wrap:anywhere}
 .kv .row{flex:0 0 auto}
 html,body{overflow-x:hidden}
+
+/* chrono de repos : la bande vire au rouge à l'approche de la fin */
+#rest .in{background:color-mix(in srgb,#c62828 var(--warn,0%),var(--chalk));transition:background-color .5s linear}
+#rest .in.late{color:#fff}
+#rest .in.late .bar{background:rgba(255,255,255,.3)}
+#rest .in.late .bar i{background:#fff}
