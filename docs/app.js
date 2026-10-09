@@ -14,7 +14,7 @@ function load() {
 }
 let db = load();
 let saved = {}; try { saved = JSON.parse(localStorage.getItem(UIKEY) || '{}'); } catch (e) { /* ignore */ }
-const ui = Object.assign({ tab: 'seance', currentId: null, sel: [], colors: {}, metric: 'max_weight', period: 'all', pct: false, stepW: 0.5, stepR: 1 }, saved);
+const ui = Object.assign({ tab: 'seance', currentId: null, sel: [], colors: {}, metric: 'max_weight', period: '365', pct: false, stepW: 0.5, stepR: 1 }, saved);
 ui.view = null; ui.point = null; ui.newDate = null; ui.rest = null;
 if (ui.currentId && !db.sessions.some(s => s.id === ui.currentId)) ui.currentId = null;
 
@@ -276,9 +276,10 @@ function drawChart() {
   let marks = '';
   for (const l of list) {
     const pts = l.pts; if (!pts.length) continue;
+    const vp = pts.filter(p => p.x >= x0 - 5 && p.x <= x1 + 5), dense = vp.length > 40, rad = dense ? 2.8 : 4.5;
     marks += `<polyline fill="none" stroke="${l.color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" points="${pts.map(p => X(p.x) + ',' + Y(p.y)).join(' ')}"/>`;
-    marks += `<g fill="${l.color}" stroke="var(--surface)" stroke-width="2">` + pts.map(p => l.shape(X(p.x), Y(p.y), 4.5).replace('/>', `><title>${esc(l.ex.name)} · ${esc(dShort(p.date))} · ${fmt(+p.v.toFixed(2))} ${METRICS[ui.metric].unit}</title>`).replace(/^<(\w+)(.*?)>(<title>.*)$/, (m, t, a, rest) => `<${t}${a}>${rest}</${t}>`)).join('') + '</g>';
-    marks += pts.filter(p => p.record).map(p => `<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="10" fill="none" stroke="var(--gold)" stroke-width="2"/>`).join('');
+    marks += `<g fill="${l.color}" stroke="var(--surface)" stroke-width="${dense ? 1 : 2}">` + vp.map(p => l.shape(X(p.x), Y(p.y), rad).replace('/>', `><title>${esc(l.ex.name)} · ${esc(dShort(p.date))} · ${fmt(+p.v.toFixed(2))} ${METRICS[ui.metric].unit}</title>`).replace(/^<(\w+)(.*?)>(<title>.*)$/, (m, t, a, rest) => `<${t}${a}>${rest}</${t}>`)).join('') + '</g>';
+    marks += (dense ? vp.filter(p => p.record).slice(-3) : vp.filter(p => p.record)).map(p => `<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="10" fill="none" stroke="var(--gold)" stroke-width="2"/>`).join('');
     if (list.length > 1) { const last = pts[pts.length - 1]; marks += `<text class="axis" x="${Math.min(W - mr, X(last.x) + 8)}" y="${Y(last.y) - 10}" text-anchor="${X(last.x) > W - 90 ? 'end' : 'start'}" style="fill:var(--ink2);font-weight:700">${esc(l.ex.name)}</text>`; }
   }
   if (ui.point) { const p = list.flatMap(l => l.pts).find(q => q.ex === ui.point.ex && q.session.id === ui.point.sid);

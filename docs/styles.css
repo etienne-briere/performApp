@@ -170,3 +170,9 @@ table.hist tbody tr{cursor:pointer}
 .empty{text-align:left;padding:8px 0 4px}
 select.sel{height:44px;border-radius:12px;border:1.5px solid var(--line);background:var(--raise);padding:0 12px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* longs noms d'exercice : la ligne passe à la ligne au lieu d'élargir la page */
+.kv{flex-wrap:wrap;align-items:center}
+.kv>span:first-child,.kv>label{min-width:0;flex:1 1 150px;overflow-wrap:anywhere}
+.kv .row{flex:0 0 auto}
+html,body{overflow-x:hidden}
