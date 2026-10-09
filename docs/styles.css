@@ -196,3 +196,13 @@ html,body{overflow-x:hidden}
 
 svg.chart.freq{height:auto;touch-action:auto}
 .sub b{color:var(--ink)}
+
+/* progrès : vues, sélection d'exercices, aide */
+.chips.wrap{flex-wrap:wrap;overflow:visible}
+.chipb .x{font-size:20px;line-height:1;color:var(--ink3);margin-left:2px}
+.chipb.add{border-style:dashed;color:var(--ink2)}
+.chipb.help{width:44px;padding:0;justify-content:center}
+.list li button .dot{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:10px;vertical-align:-1px}
+.list li button .dot.off{border:1.5px solid var(--line)}
+.linkb{background:none;border:0;padding:6px 0 0;color:var(--ink2);font-size:14px;font-weight:600;text-decoration:underline;text-underline-offset:3px;min-height:32px}
+.chipb.add{font-size:18px}

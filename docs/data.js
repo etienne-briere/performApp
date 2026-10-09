@@ -28,6 +28,14 @@
              settings: { rest: 90 }, meta: { lastExport: null, exportedSessions: 0 } };
   }
 
+  const cleanBw = v => { const n = parseNum(v); return n > 0 ? Math.min(1, +n.toFixed(2)) : 0; };   /* part du poids du corps comptée (0 = aucune) */
+  /** Poids du corps (kg) à une date : dernière pesée avant, sinon la plus ancienne ; 0 si aucune. */
+  function bodyweightAt(db, date) {
+    const L = db.bodyweight || []; if (!L.length) return 0;
+    let best = null; for (const b of L) if (b.date <= date) best = b;
+    return (best || L[0]).kg;
+  }
+
   function normalizeSet(s) {
     return { w: parseNum(s.w), r: parseNum(s.r), tempo: s.tempo ? String(s.tempo) : '',
              rest: parseNum(s.rest), done: s.done !== false };
@@ -37,7 +45,7 @@
   function normalizeDb(d) {
     const db = emptyDb();
     d = d || {};
-    db.exercises = (d.exercises || []).filter(e => e && e.name).map(e => ({ id: e.id || uid(), name: String(e.name).trim(), type: e.type || '' }));
+    db.exercises = (d.exercises || []).filter(e => e && e.name).map(e => ({ id: e.id || uid(), name: String(e.name).trim(), type: e.type || '', bw: cleanBw(e.bw) }));
     db.sessions = (d.sessions || []).filter(s => s && s.date).map(s => ({
       id: s.id || uid(), date: String(s.date).slice(0, 10),
       rpe: (s.rpe >= 1 && s.rpe <= 5) ? Math.round(s.rpe) : null, notes: s.notes || '',
@@ -46,7 +54,7 @@
         sets: (e.sets || []).map(normalizeSet)
       })).filter(e => db.exercises.some(x => x.id === e.exercise_id))
     }));
-    db.bodyweight = Array.isArray(d.bodyweight) ? d.bodyweight : [];
+    db.bodyweight = (Array.isArray(d.bodyweight) ? d.bodyweight : []).map(b => ({ date: String(b && b.date || '').slice(0, 10), kg: parseNum(b && b.kg) })).filter(b => /^\d{4}-\d\d-\d\d$/.test(b.date) && b.kg > 0).sort((a, b) => a.date.localeCompare(b.date));
     db.settings = Object.assign({ rest: 90 }, d.settings || {});
     db.meta = Object.assign({ lastExport: null, exportedSessions: 0 }, d.meta || {});
     return db;
@@ -62,16 +70,17 @@
     volume:     { label: 'Tonnage', long: 'Tonnage (poids × répétitions)', unit: 'kg', fn: S => S.reduce((a, s) => a + (s.w || 0) * s.r, 0) },
     e1rm:       { label: '1RM est.', long: '1RM estimé (Epley)', unit: 'kg', fn: S => Math.max(0, ...S.map(s => (s.w || 0) * (1 + s.r / 30))) }
   };
-  const metricOf = (sets, m) => { const S = doneSets(sets); return S.length ? METRICS[m].fn(S) : null; };
+  const metricOf = (sets, m, extra = 0) => { let S = doneSets(sets); if (extra) S = S.map(s => ({ ...s, w: (s.w || 0) + extra })); return S.length ? METRICS[m].fn(S) : null; };
 
   /** Points d'un exercice : une valeur par séance, triés par date. `record` marque chaque nouveau record. */
   function getSeries(db, exId, metric) {
-    const pts = [];
+    const pts = [], ex = db.exercises.find(x => x.id === exId), coef = ex && ex.bw || 0;
     for (const s of db.sessions) for (const e of s.entries) {
       if (e.exercise_id !== exId) continue;
-      const v = metricOf(e.sets, metric);
+      const extra = coef ? bodyweightAt(db, s.date) * coef : 0;
+      const v = metricOf(e.sets, metric, extra);
       if (v === null) continue;
-      pts.push({ x: dayNum(s.date), date: s.date, v, session: s, entry: e });
+      pts.push({ x: dayNum(s.date), date: s.date, v, extra, session: s, entry: e });
     }
     pts.sort((a, b) => a.x - b.x);
     let best = -Infinity;
@@ -174,7 +183,7 @@
     const map = {};
     for (const ex of inc.exercises) {
       let l = target.exercises.find(x => x.id === ex.id) || target.exercises.find(x => x.name.toLowerCase() === ex.name.toLowerCase());
-      if (!l) { target.exercises.push(l = { id: target.exercises.some(x => x.id === ex.id) ? uid() : ex.id, name: ex.name, type: ex.type }); stats.newExercises++; }
+      if (!l) { target.exercises.push(l = { id: target.exercises.some(x => x.id === ex.id) ? uid() : ex.id, name: ex.name, type: ex.type, bw: ex.bw || 0 }); stats.newExercises++; }
       map[ex.id] = l.id;
     }
     for (const s of inc.sessions) {
@@ -190,11 +199,13 @@
       }
       if (created) { if (added) stats.newSessions++; else target.sessions.pop(); }
     }
+    for (const b of inc.bodyweight || []) if (!target.bodyweight.some(x => x.date === b.date)) target.bodyweight.push({ ...b });
+    target.bodyweight.sort((a, b) => a.date.localeCompare(b.date));
     target.sessions.sort((a, b) => a.date.localeCompare(b.date));
     return { db: target, stats };
   }
 
   const api = { FORMAT, VERSION, uid, todayStr, dayNum, dayStr, parseNum, fmt, emptyDb, normalizeDb, METRICS, isDone, doneSets,
-                metricOf, getSeries, getPrev, parseCSV, csvToDb, toCSV, toJSON, parseBackup, mergeDb };
+                metricOf, bodyweightAt, getSeries, getPrev, parseCSV, csvToDb, toCSV, toJSON, parseBackup, mergeDb };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.PA = api;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -14,12 +14,12 @@ function load() {
 }
 let db = load();
 let saved = {}; try { saved = JSON.parse(localStorage.getItem(UIKEY) || '{}'); } catch (e) { /* ignore */ }
-const ui = Object.assign({ tab: 'seance', currentId: null, sel: [], colors: {}, metric: 'max_weight', period: '365', freqPer: 'week', freqScope: 'all', theme: 'auto', pct: false, stepW: 0.5, stepR: 1 }, saved);
+const ui = Object.assign({ tab: 'seance', currentId: null, sel: [], colors: {}, metric: 'max_weight', period: '365', pview: 'evo', hint: false, freqPer: 'week', freqScope: 'all', theme: 'auto', pct: false, stepW: 0.5, stepR: 1 }, saved);
 ui.view = null; ui.point = null; ui.newDate = null; ui.rest = null;
 if (ui.currentId && !db.sessions.some(s => s.id === ui.currentId)) ui.currentId = null;
 
 let saveTimer = 0;
-function persistUi() { try { localStorage.setItem(UIKEY, JSON.stringify({ tab: ui.tab, currentId: ui.currentId, sel: ui.sel, colors: ui.colors, metric: ui.metric, period: ui.period, freqPer: ui.freqPer, freqScope: ui.freqScope, theme: ui.theme, pct: ui.pct, stepW: ui.stepW, stepR: ui.stepR })); } catch (e) { /* ignore */ } }
+function persistUi() { try { localStorage.setItem(UIKEY, JSON.stringify({ tab: ui.tab, currentId: ui.currentId, sel: ui.sel, colors: ui.colors, metric: ui.metric, period: ui.period, pview: ui.pview, freqPer: ui.freqPer, freqScope: ui.freqScope, theme: ui.theme, pct: ui.pct, stepW: ui.stepW, stepR: ui.stepR })); } catch (e) { /* ignore */ } }
 
 function isDark() { return ui.theme === 'dark' || (ui.theme !== 'light' && matchMedia('(prefers-color-scheme:dark)').matches); }
 function applyTheme() {
@@ -155,7 +155,7 @@ function pickExercise(cb) {
     ul.addEventListener('click', ev => {
       const b = ev.target.closest('button'); if (!b) return;
       let id = b.dataset.id;
-      if (b.dataset.new) { id = uid(); db.exercises.push({ id, name: q.value.trim(), type: '' }); save(true); }
+      if (b.dataset.new) { id = uid(); db.exercises.push({ id, name: q.value.trim(), type: '', bw: 0 }); save(true); }
       closeSheet(); cb(id);
     });
     setTimeout(() => q.focus(), 60);
@@ -283,13 +283,14 @@ function drawChart() {
   for (const v of niceTicks(lo, hi, 4)) g += `<line class="grid" x1="${ml}" x2="${W - mr}" y1="${Y(v)}" y2="${Y(v)}"/><text class="axis" x="${ml - 8}" y="${Y(v) + 4}" text-anchor="end">${fmt(+v.toFixed(1))}</text>`;
   for (const [d, label] of xTicks(x0, x1)) g += `<text class="axis" x="${X(d)}" y="${H - 8}" text-anchor="middle">${esc(label)}</text>`;
   let marks = '';
+  const labelYs = [];
   for (const l of list) {
     const pts = l.pts; if (!pts.length) continue;
     const vp = pts.filter(p => p.x >= x0 - 5 && p.x <= x1 + 5), dense = vp.length > 40, rad = dense ? 2.8 : 4.5;
     marks += `<polyline fill="none" stroke="${l.color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" points="${pts.map(p => X(p.x) + ',' + Y(p.y)).join(' ')}"/>`;
     marks += `<g fill="${l.color}" stroke="var(--surface)" stroke-width="${dense ? 1 : 2}">` + vp.map(p => l.shape(X(p.x), Y(p.y), rad).replace('/>', `><title>${esc(l.ex.name)} · ${esc(dShort(p.date))} · ${fmt(+p.v.toFixed(2))} ${METRICS[ui.metric].unit}</title>`).replace(/^<(\w+)(.*?)>(<title>.*)$/, (m, t, a, rest) => `<${t}${a}>${rest}</${t}>`)).join('') + '</g>';
     marks += (dense ? vp.filter(p => p.record).slice(-3) : vp.filter(p => p.record)).map(p => `<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="10" fill="none" stroke="var(--gold)" stroke-width="2"/>`).join('');
-    if (list.length > 1) { const last = pts[pts.length - 1]; marks += `<text class="axis" x="${Math.min(W - mr, X(last.x) + 8)}" y="${Y(last.y) - 10}" text-anchor="${X(last.x) > W - 90 ? 'end' : 'start'}" style="fill:var(--ink2);font-weight:700">${esc(l.ex.name)}</text>`; }
+    if (list.length > 1) { const last = pts[pts.length - 1]; let ly = Y(last.y) - 10; while (labelYs.some(v => Math.abs(v - ly) < 14)) ly += 14; labelYs.push(ly); marks += `<text class="axis" x="${Math.min(W - mr, X(last.x) + 8)}" y="${ly}" text-anchor="${X(last.x) > W - 90 ? 'end' : 'start'}" style="fill:var(--ink2);font-weight:700">${esc(l.ex.name)}</text>`; }
   }
   if (ui.point) { const p = list.flatMap(l => l.pts).find(q => q.ex === ui.point.ex && q.session.id === ui.point.sid);
     if (p) marks += `<line x1="${X(p.x)}" x2="${X(p.x)}" y1="${mt}" y2="${H - mb}" stroke="var(--ink)" stroke-width="1.5" opacity=".5"/><circle cx="${X(p.x)}" cy="${Y(p.y)}" r="15" fill="var(--ink)" opacity=".16"/>`; }
@@ -340,40 +341,73 @@ function detailCard(list) {
   const ex = exById(p.ex), m = METRICS[ui.metric], s = p.session, rpe = s.rpe ? RPE[s.rpe - 1] : null;
   return `<div class="detail" id="detail"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><h3>${esc(ex.name)}</h3><div class="sub">${esc(dFull(s.date))}${rpe ? ' · ' + rpe[0] + ' ' + rpe[1] : ''}</div></div>
     ${p.record ? '<span class="badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 6.5 7 .9-5.1 4.9 1.3 7L12 17.8 5.8 21.3l1.3-7L2 9.4l7-.9z"/></svg>Record</span>' : ''}</div>
-    <p><strong>${esc(m.label)} : ${fmt(+p.v.toFixed(2))} ${m.unit}</strong></p>
+    <p><strong>${esc(m.label)} : ${fmt(+p.v.toFixed(2))} ${m.unit}</strong>${p.extra ? `<br><small class="muted">dont ${fmt(+p.extra.toFixed(1))} kg de poids du corps</small>` : ''}</p>
     <ol>${doneSets(p.entry.sets).map(st => `<li>${st.w != null ? fmt(st.w) + ' kg × ' : ''}${fmt(st.r)}${st.w == null ? ' reps' : ''}${st.tempo ? ' · tempo ' + esc(st.tempo) : ''}${st.rest != null ? ' · repos ' + mmss(st.rest) : ''}</li>`).join('')}</ol>
     ${s.notes ? `<p class="muted">« ${esc(s.notes)} »</p>` : ''}
     <div class="card-foot"><button class="btn small" type="button" data-act="edit-session">Modifier</button><button class="btn small danger" type="button" data-act="del-session">Supprimer</button></div></div>`;
 }
 
+function bwNote(list) {
+  const flagged = list.filter(l => l.ex.bw > 0); if (!flagged.length) return '';
+  const now = PA.bodyweightAt(db, todayStr());
+  if (!now) return `<p class="hint warn">Poids du corps non renseigné : ajoute-le dans Données pour qu'il soit compté dans ${flagged.map(l => esc(l.ex.name)).join(', ')}.</p>`;
+  return `<p class="hint">Poids du corps inclus : ${fmt(+now.toFixed(1))} kg${flagged.map(l => ` × ${Math.round(l.ex.bw * 100)} % (${esc(l.ex.name)})`).join(',')}.</p>`;
+}
 function viewProgres() {
   assignColors();
   if (!db.sessions.length) return `<h1>Progrès</h1><div class="empty"><p>Ton graphique apparaîtra ici dès ta première séance enregistrée.</p><button class="btn primary" type="button" data-tab="seance">Commencer une séance</button><p class="muted" style="margin-top:18px">Tu as déjà des données ? Importe-les depuis l'onglet Données.</p></div>`;
   if (!ui.sel.length) ui.sel = sortedExercises().slice(0, 1).map(e => e.id), assignColors();
   const list = seriesList(), main = list[0], pts = main ? main.pts : [], m = METRICS[ui.metric];
+  const view = ['evo', 'reg', 'hist'].includes(ui.pview) ? ui.pview : 'evo';
+  const views = [['evo', 'Évolution'], ['reg', 'Régularité'], ['hist', 'Historique']];
+  const many = ui.sel.length > 1;
+  const chips = ui.sel.map(id => exById(id)).filter(Boolean).map(e => `<button class="chipb" type="button" ${many ? `data-act="toggle-ex" data-ex="${e.id}" aria-label="Retirer ${esc(e.name)}"` : 'data-act="ex-pick"'}><i style="background:${colorOf(e.id)}"></i>${esc(e.name)}${many ? '<span class="x" aria-hidden="true">×</span>' : ''}</button>`).join('');
+  const head = `<h1>Progrès</h1>
+    <div class="seg" role="group" aria-label="Vue">${views.map(([k, l]) => `<button type="button" data-act="pview" data-v="${k}" aria-pressed="${view === k}">${l}</button>`).join('')}</div>
+    <div class="chips wrap" role="group" aria-label="Exercices affichés">${chips}<button class="chipb add" type="button" data-act="ex-pick" ${many ? 'aria-label="Modifier les exercices"' : ''}>${many ? '+' : 'Changer / comparer'}</button></div>`;
+  if (view === 'reg') return head + freqCard();
   const last = pts[pts.length - 1], prev = pts[pts.length - 2], best = pts.length ? pts.reduce((a, b) => b.y > a.y ? b : a) : null;
+  if (view === 'hist') {
+    const all = [...pts].reverse(), shown = ui.histAll ? all : all.slice(0, 10);
+    const rows = shown.map(p => { const S = doneSets(p.entry.sets), ws = new Set(S.map(x => x.w));
+      const txt = ws.size <= 1 ? `${S.map(x => fmt(x.r)).join(' · ')}${S[0].w != null ? ' × ' + fmt(S[0].w) + ' kg' : ' reps'}` : S.map(compactSet).join(' · ');
+      return `<tr data-act="pick-row" data-sid="${p.session.id}" aria-selected="${!!ui.point && ui.point.sid === p.session.id}"><td>${esc(dShort(p.date))}</td><td>${esc(txt)}</td><td>${fmt(+p.y.toFixed(1))}</td></tr>`; }).join('');
+    return head + `<div class="seg" role="group" aria-label="Indicateur">${Object.entries(METRICS).map(([k, v]) => `<button type="button" data-act="metric" data-m="${k}" aria-pressed="${ui.metric === k}">${v.label}</button>`).join('')}</div>`
+      + (pts.length ? `<h2>Séances de ${esc(main.ex.name)}</h2>${detailCard(list)}<table class="hist"><thead><tr><th>Date</th><th>Séries</th><th>${esc(m.label)}</th></tr></thead><tbody>${rows}</tbody></table>${all.length > 10 ? `<button class="btn wide" type="button" data-act="hist-all" style="margin-top:12px">${ui.histAll ? 'Voir moins' : `Voir tout (${all.length})`}</button>` : ''}${bwNote(list)}` : '<p class="sub">Aucune séance pour cet exercice.</p>');
+  }
   let hero = '<p class="sub">Aucune séance pour cet exercice.</p>';
   if (last) {
     const unit = ui.pct && list.length > 1 ? '%' : m.unit, dv = prev ? last.y - prev.y : null;
     hero = `<div class="hero"><span class="big">${fmt(+last.y.toFixed(1))}</span><span class="unit">${unit}</span>${dv !== null ? `<span class="delta" style="color:${dv > 0 ? 'var(--ok)' : dv < 0 ? 'var(--danger)' : 'var(--ink3)'}">${dv > 0 ? '▲ +' : dv < 0 ? '▼ ' : '= '}${dv ? fmt(+dv.toFixed(1)) : 'stable'}</span>` : ''}</div>
       <div class="sub">${esc(main.ex.name)} · ${esc(m.long)} · séance du ${esc(dShort(last.date))}${best && pts.length > 1 ? ` · record ${fmt(+best.y.toFixed(1))} ${unit}` : ''}</div>`;
   }
-  const chips = sortedExercises().map(e => { const on = ui.sel.includes(e.id); return `<button class="chipb" type="button" data-act="toggle-ex" data-ex="${e.id}" aria-pressed="${on}">${on ? `<i style="background:${colorOf(e.id)}"></i>` : ''}${esc(e.name)}</button>`; }).join('');
   const periods = [['30', '30 j'], ['90', '90 j'], ['365', '1 an'], ['all', 'Tout']];
-  const rows = [...pts].reverse().map(p => { const S = doneSets(p.entry.sets), ws = new Set(S.map(x => x.w));
-    const txt = ws.size <= 1 ? `${S.map(x => fmt(x.r)).join(' · ')}${S[0].w != null ? ' × ' + fmt(S[0].w) + ' kg' : ' reps'}` : S.map(compactSet).join(' · ');
-    return `<tr data-act="pick-row" data-sid="${p.session.id}" aria-selected="${!!ui.point && ui.point.sid === p.session.id}"><td>${esc(dShort(p.date))}</td><td>${esc(txt)}</td><td>${fmt(+p.y.toFixed(1))}</td></tr>`; }).join('');
-  return `<h1>Progrès</h1>
-    <div class="chips" role="group" aria-label="Exercices à afficher">${chips}</div>
+  return head + `
     <div class="seg" role="group" aria-label="Indicateur">${Object.entries(METRICS).map(([k, v]) => `<button type="button" data-act="metric" data-m="${k}" aria-pressed="${ui.metric === k}">${v.label}</button>`).join('')}</div>
     ${hero}
     <div class="chartwrap"><svg class="chart" id="chart" role="img" aria-label="Graphique de progression"></svg></div>
-    <div class="chips" role="group" aria-label="Période">${periods.map(([k, l]) => `<button class="chipb" type="button" data-act="period" data-p="${k}" aria-pressed="${ui.period === k}">${l}</button>`).join('')}${list.length > 1 ? `<button class="chipb" type="button" data-act="pct" aria-pressed="${ui.pct}">En % du départ</button>` : ''}</div>
-    <p class="hint">Glisse pour te déplacer, pince pour zoomer, double tape pour revenir. Touche un point pour voir la séance. Un cercle doré marque un record.</p>
-    ${detailCard(list)}
-    ${freqCard()}
-    ${pts.length ? `<h2>Séances de ${esc(main.ex.name)}</h2><table class="hist"><thead><tr><th>Date</th><th>Séries</th><th>${esc(m.label)}</th></tr></thead><tbody>${rows}</tbody></table>` : ''}`;
+    <div class="chips" role="group" aria-label="Période">${periods.map(([k, l]) => `<button class="chipb" type="button" data-act="period" data-p="${k}" aria-pressed="${ui.period === k}">${l}</button>`).join('')}${list.length > 1 ? `<button class="chipb" type="button" data-act="pct" aria-pressed="${ui.pct}">En % du départ</button>` : ''}<button class="chipb help" type="button" data-act="hint" aria-pressed="${ui.hint}" aria-label="Aide">?</button></div>
+    ${ui.hint ? '<p class="hint">Glisse pour te déplacer, pince pour zoomer, double tape pour revenir. Touche un point pour voir la séance. Un cercle doré marque un record : une séance qui bat toutes les précédentes du même exercice.</p>' : ''}
+    ${bwNote(list)}
+    ${detailCard(list)}`;
 }
+
+/* choix des exercices affichés (4 maximum, pour les comparer) */
+function pickMany() {
+  openSheet(`<h2>Exercices affichés</h2><p class="muted" style="margin:0 0 6px">Choisis-en jusqu'à 4 pour les comparer.</p><input class="search" id="q" placeholder="Rechercher" autocomplete="off" aria-label="Rechercher un exercice"><ul class="list" id="exlist"></ul><div class="stack" style="margin-top:14px"><button class="btn primary wide" data-ok>Terminé</button></div>`, el => {
+    const q = $('#q', el), ul = $('#exlist', el);
+    const draw = () => { const low = q.value.trim().toLowerCase();
+      ul.innerHTML = sortedExercises().filter(e => e.name.toLowerCase().includes(low)).map(e => { const on = ui.sel.includes(e.id);
+        return `<li><button type="button" data-id="${e.id}" aria-pressed="${on}"><span>${on ? `<i class="dot" style="background:${colorOf(e.id)}"></i>` : '<i class="dot off"></i>'}${esc(e.name)}</span><small>${on ? 'affiché' : lastUsed(e.id) ? 'vu ' + esc(dShort(lastUsed(e.id))) : ''}</small></button></li>`; }).join('') || '<li class="muted" style="padding:14px 4px">Aucun exercice.</li>'; };
+    q.addEventListener('input', draw); draw();
+    ul.addEventListener('click', ev => { const b = ev.target.closest('button'); if (!b) return; const id = b.dataset.id;
+      if (ui.sel.includes(id)) { if (ui.sel.length === 1) { toast('Garde au moins un exercice.'); return; } ui.sel = ui.sel.filter(x => x !== id); }
+      else { if (ui.sel.length >= 4) { toast('4 exercices au maximum.'); return; } ui.sel.push(id); delete ui.colors[id]; }
+      assignColors(); ui.view = null; ui.point = null; persistUi(); draw(); });
+    $('[data-ok]', el).onclick = () => { closeSheet(); renderProgres(); };
+  });
+}
+
 /* ---- régularité : nombre de séances réalisées par semaine / par mois ---- */
 function freqBars() {
   const per = ui.freqPer, N = 12, now = PA.dayNum(todayStr()), sel = new Set(ui.sel);
@@ -393,7 +427,7 @@ function freqBars() {
 }
 function freqCard() {
   const bars = freqBars(), per = ui.freqPer, unit = per === 'week' ? 'semaine' : 'mois', done = bars.filter(b => !b.current), avg = done.length ? done.reduce((a, b) => a + b.n, 0) / done.length : 0;
-  const max = Math.max(4, ...bars.map(b => b.n)), W = 360, H = 150, ml = 26, mb = 24, mt = 10, bw = (W - ml - 6) / bars.length, Y = v => mt + (1 - v / max) * (H - mt - mb);
+  const max = Math.max(4, ...bars.map(b => b.n)), W = 360, H = 160, ml = 26, mb = 24, mt = 20, bw = (W - ml - 6) / bars.length, Y = v => mt + (1 - v / max) * (H - mt - mb);
   let g = ''; const step = max > 8 ? 4 : max > 4 ? 2 : 1;
   for (let v = 0; v <= max; v += step) g += `<line class="grid" x1="${ml}" x2="${W - 6}" y1="${Y(v)}" y2="${Y(v)}"/><text class="axis" x="${ml - 6}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`;
   bars.forEach((b, i) => { const x = ml + i * bw + bw * 0.16, w = bw * 0.68, y = Y(b.n), h = Math.max(b.n ? 3 : 0, H - mb - y);
@@ -411,10 +445,10 @@ function renderProgres() { $('#app').innerHTML = viewProgres(); drawChart(); bin
 
 /* ======================================================= DONNÉES */
 function viewDonnees() {
-  const meta = db.meta, changes = meta.changes || 0;
+  const meta = db.meta, changes = meta.changes || 0, bwList = [...db.bodyweight].reverse().slice(0, 4), bwLast = db.bodyweight[db.bodyweight.length - 1];
   const status = meta.lastExport ? `Dernière sauvegarde : ${new Date(meta.lastExport).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })}` : 'Aucune sauvegarde pour l\'instant';
   const exRows = sortedExercises().map(e => { const n = db.sessions.filter(s => s.entries.some(x => x.exercise_id === e.id)).length;
-    return `<div class="kv"><span>${esc(e.name)}<br><small class="muted">${n} séance${n > 1 ? 's' : ''}</small></span><span class="row"><button class="btn small" type="button" data-act="ex-rename" data-ex="${e.id}">Renommer</button><button class="btn small danger" type="button" data-act="ex-delete" data-ex="${e.id}">Supprimer</button></span></div>`; }).join('');
+    return `<div class="kv"><span>${esc(e.name)}<br><small class="muted">${n} séance${n > 1 ? 's' : ''}</small><br><button class="linkb" type="button" data-act="ex-bw" data-ex="${e.id}">Poids du corps : ${e.bw ? Math.round(e.bw * 100) + ' %' : 'non compté'}</button></span><span class="row"><button class="btn small" type="button" data-act="ex-rename" data-ex="${e.id}">Renommer</button><button class="btn small danger" type="button" data-act="ex-delete" data-ex="${e.id}">Supprimer</button></span></div>`; }).join('');
   return `<h1>Données</h1>
     <div class="panel"><h2>Sauvegarde</h2>
       <p class="muted">Tes données restent sur cet appareil. Exporte-les pour les garder en sécurité ou les retrouver sur un autre téléphone.</p>
@@ -423,6 +457,10 @@ function viewDonnees() {
       <button class="btn wide" type="button" data-act="import">Importer un fichier</button></div>
       <p class="muted" style="margin:12px 0 0;font-size:14px">L'import accepte le JSON de PerformApp et le CSV de l'ancienne application. Il peut fusionner avec tes données sans créer de doublon.</p></div>
     <div class="panel"><h2>Exercices</h2>${exRows || '<p class="muted">Aucun exercice pour l\'instant. Tu peux en créer depuis l\'onglet Séance.</p>'}</div>
+    <div class="panel"><h2>Poids du corps</h2>
+      <p class="muted">Utile pour les exercices au poids du corps (tractions, dips, pompes) : il est ajouté à la charge dans les graphiques. Active-le exercice par exercice dans la liste ci-dessus.</p>
+      <div class="row" style="align-items:stretch;flex-wrap:wrap"><input class="search" id="bw-kg" inputmode="decimal" placeholder="kg" style="flex:1 1 90px;min-width:0" aria-label="Poids en kg" value="${bwLast ? fmt(bwLast.kg) : ''}"><input class="search" id="bw-date" type="date" value="${todayStr()}" style="flex:1 1 140px;min-width:0" aria-label="Date de la pesée"><button class="btn primary" type="button" data-act="bw-save">Enregistrer</button></div>
+      ${bwList.map(b => `<div class="kv"><span>${fmt(b.kg)} kg<br><small class="muted">${esc(dFull(b.date))}</small></span><button class="btn small" type="button" data-act="bw-del" data-d="${b.date}" aria-label="Supprimer cette pesée">Retirer</button></div>`).join('')}</div>
     <div class="panel"><h2>Réglages</h2><div class="kv"><span>Apparence</span></div><div class="seg theme" role="group" aria-label="Apparence">${[['auto', 'Automatique'], ['light', 'Clair'], ['dark', 'Sombre']].map(([k, l]) => `<button type="button" data-act="theme" data-t="${k}" aria-pressed="${ui.theme === k}">${l}</button>`).join('')}</div><div class="kv"><label for="rest-sel">Repos visé entre deux séries</label><select class="sel" id="rest-sel" data-act="rest-set">${[45, 60, 90, 120, 180, 240].map(v => `<option value="${v}" ${db.settings.rest === v ? 'selected' : ''}>${mmss(v)}</option>`).join('')}</select></div>
       <div class="kv"><span>Export pour tableur</span><button class="btn small" type="button" data-act="export-csv">CSV</button></div>
       ${localStorage.getItem(PREVKEY) ? '<div class="kv"><span>Avant le dernier import</span><button class="btn small" type="button" data-act="restore">Restaurer</button></div>' : ''}
@@ -527,6 +565,18 @@ const actions = {
     if (ui.currentId === p.sid) ui.currentId = null; ui.point = null; save(true); render(); toast('Séance supprimée.'); }); },
   'export-json': () => exportFile('json'), 'export-csv': () => exportFile('csv'),
   import: () => { const f = $('#file'); f.value = ''; f.click(); },
+  pview: el => { ui.pview = el.dataset.v; ui.point = null; persistUi(); renderProgres(); },
+  hint: () => { ui.hint = !ui.hint; persistUi(); renderProgres(); },
+  'hist-all': () => { ui.histAll = !ui.histAll; renderProgres(); },
+  'ex-pick': () => pickMany(),
+  'ex-bw': el => { const ex = exById(el.dataset.ex), cur = ex.bw || 0;
+    const opts = [[0, 'Non compté'], [1, '100 % du poids du corps'], [0.7, '70 %'], [0.5, '50 %']];
+    openSheet(`<h2>Poids du corps : ${esc(ex.name)}</h2><p class="muted">Pour les tractions ou les dips, tout le poids du corps est soulevé en plus du lest. Pour les pompes, environ 65 à 70 %. Le poids est ajouté à tes charges dans les graphiques (poids max, tonnage, 1RM).</p><div class="stack">${opts.map(([v, l]) => `<button class="btn wide ${cur === v ? 'primary' : ''}" data-v="${v}">${l}</button>`).join('')}</div>`, sh => {
+      sh.addEventListener('click', ev => { const b = ev.target.closest('[data-v]'); if (!b) return; ex.bw = +b.dataset.v; save(true); closeSheet(); ui.view = null; render(); toast(ex.bw ? 'Poids du corps compté.' : 'Poids du corps non compté.'); }); }); },
+  'bw-save': () => { const kg = PA.parseNum($('#bw-kg').value), date = $('#bw-date').value || todayStr();
+    if (!(kg >= 20 && kg <= 300)) { toast('Entre un poids entre 20 et 300 kg.'); return; }
+    db.bodyweight = db.bodyweight.filter(b => b.date !== date).concat([{ date, kg }]).sort((a, b) => a.date.localeCompare(b.date)); ui.view = null; save(true); render(); toast('Poids enregistré.'); },
+  'bw-del': el => { db.bodyweight = db.bodyweight.filter(b => b.date !== el.dataset.d); ui.view = null; save(true); render(); },
   'ex-rename': el => { const ex = exById(el.dataset.ex);
     openSheet(`<h2>Renommer l'exercice</h2><input class="search" id="nm" value="${esc(ex.name)}" aria-label="Nouveau nom"><div class="stack" style="margin-top:14px"><button class="btn primary wide" data-ok>Renommer</button><button class="btn wide" data-c>Annuler</button></div>`, sh => {
       $('[data-c]', sh).onclick = closeSheet;
