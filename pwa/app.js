@@ -280,8 +280,8 @@ function drawChart() {
   const list = seriesList();
   if (!ui.view) ui.view = defaultView(list);
   const [x0, x1] = ui.view, W = svg.clientWidth || 360, H = 300, ml = 46, mr = 14, mt = 12, mb = 28;
-  const vis = list.flatMap(l => l.pts).filter(p => p.x >= x0 && p.x <= x1);
-  const all = vis.length ? vis : list.flatMap(l => l.pts);
+  /* Échelle Y fixe : calculée sur tout l'historique, pour qu'elle ne change ni avec la période choisie ni avec le zoom. */
+  const all = list.flatMap(l => l.pts);
   let lo = all.length ? Math.min(...all.map(p => p.y)) : 0, hi = all.length ? Math.max(...all.map(p => p.y)) : 1;
   const pad = (hi - lo) * 0.18 || Math.max(1, Math.abs(hi) * 0.1);
   lo = lo - pad; hi = hi + pad; if (lo < 0 && Math.min(...all.map(p => p.y), 0) >= 0) lo = 0;
@@ -516,7 +516,13 @@ function render() {
   if (ui.tab === 'progres') { renderProgres(); return; }
   $('#app').innerHTML = ui.tab === 'seance' ? viewSeance() : viewDonnees();
 }
-function setTab(t) { ui.tab = t; ui.point = t === 'progres' ? ui.point : null; persistUi(); render(); window.scrollTo(0, 0); }
+function setTab(t) {
+  /* Depuis Séance vers Progrès : on affiche par défaut les exercices de la séance en cours qui ont au moins une série validée (4 max). */
+  const cur = curSession();
+  const ids = cur ? [...new Set(cur.entries.filter(e => e.sets.some(isDone)).map(e => e.exercise_id))].filter(id => exById(id)).slice(0, 4) : [];
+  if (t === 'progres' && ui.tab === 'seance' && ids.length) { ui.sel = ids; ui.point = null; ui.view = null; assignColors(); }
+  ui.tab = t; ui.point = t === 'progres' ? ui.point : null; persistUi(); render(); window.scrollTo(0, 0);
+}
 
 /* ===================================================== CLAVIER +/- */
 let dockInput = null;
