@@ -1,0 +1,419 @@
+{
+  "format": "performapp",
+  "version": 1,
+  "exported_at": "2026-10-09T18:53:20.189Z",
+  "exercises": [
+    {
+      "id": "7ef5fb56-2972-4db3-9163-821d3a997fcd",
+      "name": "Traction_P",
+      "type": ""
+    },
+    {
+      "id": "3f19f529-514b-4d49-9708-6a98a59ea9f2",
+      "name": "Traction_A",
+      "type": ""
+    },
+    {
+      "id": "a8430e05-fa02-457f-9a7a-4c15bd5cf84e",
+      "name": "Pompe",
+      "type": ""
+    },
+    {
+      "id": "768ef00e-d00e-4381-91f8-2f3510e8d4d4",
+      "name": "Dips",
+      "type": ""
+    }
+  ],
+  "sessions": [
+    {
+      "id": "b5921e17-2e14-4dfe-9ffa-aa6050907008",
+      "date": "2026-02-10",
+      "rpe": 2,
+      "notes": "",
+      "entries": [
+        {
+          "id": "207ce42d-78a3-4861-923f-547517a4e4f1",
+          "exercise_id": "7ef5fb56-2972-4db3-9163-821d3a997fcd",
+          "showTempo": false,
+          "sets": [
+            {
+              "w": 6.9,
+              "r": 7,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 6.9,
+              "r": 6,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 6.9,
+              "r": 5,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 6.9,
+              "r": 4,
+              "tempo": "",
+              "rest": null
+            }
+          ]
+        },
+        {
+          "id": "64464d88-67fa-4ee2-bacd-cb600b9a743d",
+          "exercise_id": "3f19f529-514b-4d49-9708-6a98a59ea9f2",
+          "showTempo": false,
+          "sets": [
+            {
+              "w": 11.7,
+              "r": 9,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 11.7,
+              "r": 7.5,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 11.7,
+              "r": 7,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 11.7,
+              "r": 6.5,
+              "tempo": "",
+              "rest": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ef4b224e-9f87-4b32-a07e-30885840139a",
+      "date": "2026-02-12",
+      "rpe": 4,
+      "notes": "",
+      "entries": [
+        {
+          "id": "e5394f1c-6975-47b7-96cc-917da40fcf6f",
+          "exercise_id": "a8430e05-fa02-457f-9a7a-4c15bd5cf84e",
+          "showTempo": false,
+          "sets": [
+            {
+              "w": 16.5,
+              "r": 10,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 16.5,
+              "r": 8,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 16.5,
+              "r": 8,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 16.5,
+              "r": 6,
+              "tempo": "",
+              "rest": null
+            }
+          ]
+        },
+        {
+          "id": "336ad2e4-0ca3-479b-b0a4-959f7a23e89d",
+          "exercise_id": "768ef00e-d00e-4381-91f8-2f3510e8d4d4",
+          "showTempo": false,
+          "sets": [
+            {
+              "w": 10.5,
+              "r": 10,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 10.5,
+              "r": 10,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 10.5,
+              "r": 8,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 10.5,
+              "r": 7,
+              "tempo": "",
+              "rest": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "23522f4c-d37b-4630-b02c-c235c576dacc",
+      "date": "2026-02-17",
+      "rpe": 4,
+      "notes": "",
+      "entries": [
+        {
+          "id": "19a6bb74-51a2-49fc-ab20-ffd4c8a94828",
+          "exercise_id": "3f19f529-514b-4d49-9708-6a98a59ea9f2",
+          "showTempo": false,
+          "sets": [
+            {
+              "w": 11.7,
+              "r": 9,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 11.7,
+              "r": 7.5,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 11.7,
+              "r": 7,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 11.7,
+              "r": 6.5,
+              "tempo": "",
+              "rest": null
+            }
+          ]
+        },
+        {
+          "id": "92208bd6-4829-448d-a437-fe470286c553",
+          "exercise_id": "7ef5fb56-2972-4db3-9163-821d3a997fcd",
+          "showTempo": false,
+          "sets": [
+            {
+              "w": 6.9,
+              "r": 8,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 6.9,
+              "r": 6.5,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 6.9,
+              "r": 5,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 6.9,
+              "r": 4,
+              "tempo": "",
+              "rest": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "9e9dd7ea-f882-428f-8f3f-acee08d1cca4",
+      "date": "2026-02-19",
+      "rpe": 4,
+      "notes": "",
+      "entries": [
+        {
+          "id": "942ab62e-3583-44ab-a38b-13c1b6211d23",
+          "exercise_id": "a8430e05-fa02-457f-9a7a-4c15bd5cf84e",
+          "showTempo": false,
+          "sets": [
+            {
+              "w": 16.5,
+              "r": 11,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 16.5,
+              "r": 9,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 16.5,
+              "r": 8,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 16.5,
+              "r": 7,
+              "tempo": "",
+              "rest": null
+            }
+          ]
+        },
+        {
+          "id": "7ba9d2b2-edf3-4ba7-8679-97c1d1afb9a9",
+          "exercise_id": "768ef00e-d00e-4381-91f8-2f3510e8d4d4",
+          "showTempo": false,
+          "sets": [
+            {
+              "w": 11.7,
+              "r": 8,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 11.7,
+              "r": 8,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 11.7,
+              "r": 7,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 11.7,
+              "r": 6,
+              "tempo": "",
+              "rest": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "5d84cac9-00a7-41da-887a-a8483e3735af",
+      "date": "2026-03-02",
+      "rpe": 3,
+      "notes": "",
+      "entries": [
+        {
+          "id": "8d891873-f805-40f2-9c92-e75b1f6cdde9",
+          "exercise_id": "3f19f529-514b-4d49-9708-6a98a59ea9f2",
+          "showTempo": false,
+          "sets": [
+            {
+              "w": 11.7,
+              "r": 9,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 11.7,
+              "r": 8,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 11.7,
+              "r": 7.5,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 11.7,
+              "r": 6.5,
+              "tempo": "",
+              "rest": null
+            }
+          ]
+        },
+        {
+          "id": "6295d4f0-f643-4f0e-a3f4-c364b0688b01",
+          "exercise_id": "7ef5fb56-2972-4db3-9163-821d3a997fcd",
+          "showTempo": false,
+          "sets": [
+            {
+              "w": 6.9,
+              "r": 8,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 6.9,
+              "r": 6,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 6.9,
+              "r": 5,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 6.9,
+              "r": 3.5,
+              "tempo": "",
+              "rest": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "e363aad1-ffa1-41be-b74d-56fee896c982",
+      "date": "2026-03-03",
+      "rpe": 3,
+      "notes": "",
+      "entries": [
+        {
+          "id": "2ff787a7-f0b4-4e26-a8bc-9c168826ab98",
+          "exercise_id": "768ef00e-d00e-4381-91f8-2f3510e8d4d4",
+          "showTempo": false,
+          "sets": [
+            {
+              "w": 11.7,
+              "r": 7,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 11.7,
+              "r": 7,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 11.7,
+              "r": 6,
+              "tempo": "",
+              "rest": null
+            },
+            {
+              "w": 11.7,
+              "r": 5.5,
+              "tempo": "",
+              "rest": null
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "bodyweight": []
+}

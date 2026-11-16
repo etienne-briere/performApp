@@ -197,12 +197,12 @@ function tickRest() {
   box.style.setProperty('--warn', Math.round(r * 100) + '%'); box.classList.toggle('late', r > (isDark() ? 0.8 : 0.45));
 }
 function stopRest() { ui.rest = null; clearInterval(restTimer); $('#rest').style.display = 'none'; }
-/** Bouton OK : le repos écoulé depuis la dernière série validée est enregistré avant de masquer le chrono. */
+/** Bouton OK : le repos écoulé depuis la série validée est enregistré (sauf sous la dernière série de l'exercice) avant de masquer le chrono. */
 function commitRest() {
   const r = ui.rest, s = curSession();
   if (r && s) {
     const e = s.entries.find(x => x.id === r.eid), st = e && e.sets[r.i], secs = Math.round((Date.now() - r.t0) / 1000);
-    if (st && isDone(st) && secs <= 900) { st.rest = secs; save(); }
+    if (st && isDone(st) && r.i < e.sets.length - 1 && secs <= 900) { st.rest = secs; save(); }
   }
   stopRest(); render();
 }

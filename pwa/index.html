@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#12161A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PerformApp">
+<title>PerformApp</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="rest" role="timer" aria-live="off"><div class="in"><span class="lbl">Repos</span><span class="t">0:00</span><span class="bar"><i></i></span><button type="button" data-act="rest-off" aria-label="Masquer le chrono">OK</button></div></div>
+<main id="app"></main>
+<div id="dock" aria-label="Réglage rapide"><div class="in">
+  <button class="step" type="button" data-act="dock-minus" aria-label="Diminuer">&minus;</button>
+  <div class="val"><small id="dock-label">Poids</small><span id="dock-val">0</span></div>
+  <button class="step" type="button" data-act="dock-plus" aria-label="Augmenter">+</button>
+  <div class="chips" id="dock-chips"></div>
+</div></div>
+<nav id="tabbar" aria-label="Navigation"><div class="in" role="tablist">
+  <button type="button" role="tab" data-tab="seance"><svg viewBox="0 0 24 24"><path d="M3 9v6M6 6v12M18 6v12M21 9v6M6 12h12"/></svg>Séance</button>
+  <button type="button" role="tab" data-tab="progres"><svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 8-9"/><path d="M14 5h6v6"/></svg>Progrès</button>
+  <button type="button" role="tab" data-tab="donnees"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg>Données</button>
+</div></nav>
+<div id="scrim"></div><div id="sheet" role="dialog" aria-modal="true"><div class="in"></div></div>
+<div id="toast" role="status"></div>
+<input type="file" id="file" accept=".json,.csv,application/json,text/csv" hidden>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
