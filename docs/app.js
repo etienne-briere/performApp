@@ -221,7 +221,6 @@ function toggleSet(entry, i) {
     const secs = Math.round((Date.now() - ui.rest.t0) / 1000);
     if (secs <= 900) entry.sets[i - 1].rest = secs;
   }
-  if (i === entry.sets.length - 1) entry.sets.push({ w: null, r: null, tempo: '', rest: null, done: false });
   startRest(entry.id, i); save(); render();
 }
 
