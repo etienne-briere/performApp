@@ -111,7 +111,7 @@ function entryCard(entry, s) {
       <button class="chk" type="button" data-act="chk" aria-pressed="${done}" aria-label="${done ? 'Annuler' : 'Valider'} la série ${i + 1}">${CHECK}</button>
       ${entry.showTempo || st.rest != null ? `<div class="extra">
         ${entry.showTempo ? `<label class="fld"><span class="sr">Tempo</span><input class="num" autocomplete="off" data-f="tempo" value="${esc(st.tempo)}" placeholder="3-1-2"><small>tempo</small></label>` : ''}
-        ${st.rest != null ? `<span>repos ${mmss(st.rest)}</span>` : ''}</div>` : ''}
+        ${st.rest != null ? `<button class="linkb" type="button" data-act="edit-rest" aria-label="Modifier le repos de la série ${i + 1}">repos ${mmss(st.rest)} ✎</button>` : ''}</div>` : ''}
     </div>`;
   }).join('');
   return `<section class="ex" data-eid="${entry.id}">
@@ -197,6 +197,15 @@ function tickRest() {
   box.style.setProperty('--warn', Math.round(r * 100) + '%'); box.classList.toggle('late', r > (isDark() ? 0.8 : 0.45));
 }
 function stopRest() { ui.rest = null; clearInterval(restTimer); $('#rest').style.display = 'none'; }
+/** Bouton OK : le repos écoulé depuis la dernière série validée est enregistré avant de masquer le chrono. */
+function commitRest() {
+  const r = ui.rest, s = curSession();
+  if (r && s) {
+    const e = s.entries.find(x => x.id === r.eid), st = e && e.sets[r.i], secs = Math.round((Date.now() - r.t0) / 1000);
+    if (st && isDone(st) && secs <= 900) { st.rest = secs; save(); }
+  }
+  stopRest(); render();
+}
 
 function toggleSet(entry, i) {
   const st = entry.sets[i], s = curSession(), prev = getPrev(db, entry.exercise_id, s.id);
@@ -548,7 +557,16 @@ const actions = {
       $('[data-c]', sh).onclick = closeSheet; $('[data-t]', sh).onclick = () => { e.showTempo = !e.showTempo; save(); closeSheet(); render(); };
       $('[data-r]', sh).onclick = () => { const s = curSession(); s.entries = s.entries.filter(x => x !== e); save(); closeSheet(); render(); }; }); },
   finish: () => { const s = curSession(); if (!s) return; if (!s.entries.some(e => e.sets.some(isDone))) { confirmSheet('Séance vide', 'Aucune série n\'est validée. Abandonner cette séance ?', 'Abandonner', () => finishSession(s)); return; } finishSheet(s); },
-  'rest-off': stopRest,
+  'edit-rest': el => { const e = entryOf(el), i = +el.closest('.set').dataset.i, st = e && e.sets[i]; if (!st) return;
+    const cur = st.rest != null ? Math.round(st.rest) : 0;
+    openSheet(`<h2>Repos après la série ${i + 1}</h2><div class="rest-edit"><label class="fld"><input class="num" id="re-m" inputmode="numeric" autocomplete="off" aria-label="Minutes" value="${Math.floor(cur / 60)}"><small>min</small></label><label class="fld"><input class="num" id="re-s" inputmode="numeric" autocomplete="off" aria-label="Secondes" value="${cur % 60}"><small>sec</small></label></div><div class="stack" style="margin-top:14px"><button class="btn wide primary" data-ok>Enregistrer</button><button class="btn wide danger" data-del>Supprimer le repos</button><button class="btn wide" data-c>Annuler</button></div>`, sh => {
+      const m = $('#re-m', sh), sec = $('#re-s', sh);
+      $('[data-c]', sh).onclick = closeSheet;
+      $('[data-ok]', sh).onclick = () => { const tot = parseInt(m.value || '0', 10) * 60 + parseInt(sec.value || '0', 10);
+        if (!Number.isFinite(tot) || tot < 0 || tot > 3599) { toast('Repos invalide.'); return; }
+        st.rest = tot; save(); closeSheet(); render(); };
+      $('[data-del]', sh).onclick = () => { st.rest = null; save(); closeSheet(); render(); }; }); },
+  'rest-off': commitRest,
   'dock-minus': () => dockBump(-1), 'dock-plus': () => dockBump(1),
   'dock-step': el => { if (!dockInput) return; if (dockInput.dataset.f === 'w') ui.stepW = +el.dataset.s; else ui.stepR = +el.dataset.s; persistUi(); dockRefresh(); },
   'toggle-ex': el => { const id = el.dataset.ex; if (ui.sel.includes(id)) { if (ui.sel.length === 1) { toast('Garde au moins un exercice.'); return; } ui.sel = ui.sel.filter(x => x !== id); } else { if (ui.sel.length >= 4) { toast('4 exercices au maximum.'); return; } ui.sel.push(id); delete ui.colors[id]; } ui.view = null; ui.point = null; persistUi(); renderProgres(); },

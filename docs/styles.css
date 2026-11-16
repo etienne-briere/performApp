@@ -92,6 +92,8 @@ p{margin:0 0 10px}
 @keyframes draw{from{stroke-dashoffset:24}to{stroke-dashoffset:0}}
 .set .extra{grid-column:2/4;display:flex;gap:10px;align-items:center;font-size:13px;color:var(--ink3)}
 .set .extra .fld{flex:1}
+.set .extra .linkb{padding:0;min-height:40px;font-size:13px;color:var(--ink3)}
+.rest-edit{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .set .extra .num{height:40px;font-size:18px}
 .card-foot{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .shake{animation:shake .3s}
